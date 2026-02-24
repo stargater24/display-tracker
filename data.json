@@ -1,38 +1,5 @@
 {
-  "records": [
-    {
-      "location": "1BR",
-      "otherLocation": "",
-      "displayType": "Endcap",
-      "product": "blah blah",
-      "vendor": "unfi",
-      "directive": "Store Discretion",
-      "status": "scheduled",
-      "setupDate": "2026-02-24",
-      "expectedLife": 14,
-      "permanent": false,
-      "notes": "",
-      "modifications": [],
-      "planogramData": null,
-      "id": 10
-    },
-    {
-      "location": "1BR",
-      "otherLocation": "",
-      "displayType": "Endcap",
-      "product": "Steve's Favorite",
-      "vendor": "MCDC",
-      "directive": "Clearance",
-      "status": "active",
-      "setupDate": "2026-02-24",
-      "expectedLife": 0,
-      "permanent": true,
-      "notes": "",
-      "modifications": [],
-      "planogramData": null,
-      "id": 11
-    }
-  ],
+  "records": [],
   "nextId": 12,
   "templates": [],
   "dimCache": {},
