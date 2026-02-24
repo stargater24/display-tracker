@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Display Location Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5B8DEF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0F1114;--surface:#1A1D22;--surface2:#22262D;--surface3:#2C3038;
+    --border:#2E3440;--border-focus:#5B8DEF;--text:#E8EAED;--text2:#9AA0AB;
+    --text3:#6B7280;--accent:#5B8DEF;--accent-dim:rgba(91,141,239,0.12);
+    --green:#34C759;--orange:#FF9F0A;--red:#FF3B30;--purple:#BF5AF2;
+    --mono:'JetBrains Mono',monospace;--sans:'DM Sans',-apple-system,sans-serif;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.4}
+  #root{min-height:100vh}
+  .app{max-width:1400px;margin:0 auto;padding:24px 28px;min-height:100vh}
+  .header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .header-left h1{font-size:22px;font-weight:700;letter-spacing:-0.3px}
+  .header-left p{font-size:13px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .status-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .status-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;user-select:none}
+  .status-pill:hover{border-color:var(--text3)}
+  .status-pill.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--text)}
+  .status-pill .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .status-pill .count{font-family:var(--mono);font-size:11px;background:var(--surface3);padding:1px 6px;border-radius:3px}
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .search-box{flex:1;min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s}
+  .search-box:focus{border-color:var(--accent)}
+  .search-box::placeholder{color:var(--text3)}
+  .btn{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--text3);background:var(--surface2)}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-primary:hover{background:#4A7DE0}
+  .btn-danger{color:var(--red)}.btn-danger:hover{background:rgba(255,59,48,.1);border-color:var(--red)}
+  .btn-transition{color:var(--purple);border-color:rgba(191,90,242,.3)}
+  .btn-transition:hover{background:rgba(191,90,242,.1);border-color:var(--purple)}
+  .btn-print{color:var(--green);border-color:rgba(52,199,89,.3)}
+  .btn-print:hover{background:rgba(52,199,89,.1);border-color:var(--green)}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  .btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+  .select-count{font-size:12px;color:var(--text3);font-family:var(--mono);padding:4px 0}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:1100px}
+  thead{background:var(--surface2)}
+  th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+  th:hover{color:var(--text2)}
+  th.no-sort{cursor:default}
+  th.no-sort:hover{color:var(--text3)}
+  td{padding:10px 14px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(91,141,239,.04)}
+  tr.row-expiring td{background:rgba(255,159,10,.04)}
+  tr.row-expired td{background:rgba(255,59,48,.04)}
+  tr.row-selected td{background:rgba(52,199,89,.06)}
+  .cb-cell{width:36px;text-align:center}
+  .cb-cell input[type="checkbox"]{width:16px;height:16px;accent-color:var(--green);cursor:pointer}
+  .product-name{font-weight:500}
+  .vendor-cell{color:var(--text2);font-size:12px}
+  .loc-code{font-family:var(--mono);font-weight:600;font-size:13px}
+  .loc-sub{font-size:11px;color:var(--text3)}
+  .badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.2px;color:#fff}
+  .directive-tag{font-size:11px;padding:2px 7px;border-radius:3px;background:var(--surface3);color:var(--text2);display:inline-block;white-space:nowrap}
+  .directive-tag.mandatory{background:rgba(255,59,48,.15);color:#FF6961}
+  .directive-tag.vendor{background:rgba(91,141,239,.15);color:#7BA3F7}
+  .directive-tag.seasonal{background:rgba(52,199,89,.15);color:#5AD87A}
+  .life-bar-wrap{width:80px}
+  .life-bar-bg{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+  .life-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+  .life-label{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px}
+  .perm-indicator{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+  .perm-dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
+  .mod-badge{font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,159,10,.12);color:#FFB340;display:inline-block;white-space:nowrap;font-weight:500}
+  .mod-count{font-family:var(--mono);font-size:10px;color:var(--text3)}
+  .actions-cell{display:flex;gap:4px}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+  .empty-state p{font-size:14px;margin-bottom:12px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fadeIn .15s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .modal-layout{display:flex;gap:0;max-width:1100px;width:100%;max-height:90vh;animation:slideUp .2s ease}
+  @keyframes slideUp{from{transform:translateY(12px);opacity:0}}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px 0 0 10px;flex:1;min-width:0;overflow-y:auto}
+  .modal.no-map{border-radius:10px}
+  .modal-map{width:420px;min-width:320px;background:var(--surface2);border:1px solid var(--border);border-left:none;border-radius:0 10px 10px 0;overflow:hidden;display:flex;flex-direction:column}
+  .modal-map-header{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+  .modal-map-body{flex:1;overflow:auto;padding:8px;display:flex;align-items:flex-start;justify-content:center}
+  .modal-map-body img{width:100%;height:auto;border-radius:4px;cursor:zoom-in}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+  .modal-header h2{font-size:16px;font-weight:600}
+  .modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px}
+  .modal-close:hover{color:var(--text)}
+  .modal-body{padding:22px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-group{display:flex;flex-direction:column;gap:5px}
+  .form-group.full{grid-column:1/-1}
+  .form-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3)}
+  .form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+  .form-group textarea{resize:vertical;min-height:60px}
+  .form-group select{cursor:pointer}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid var(--border)}
+  .checkbox-row{display:flex;align-items:center;gap:8px;padding-top:6px}
+  .checkbox-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .checkbox-row label{font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer}
+  .mod-form-section{border:1px solid var(--border);border-radius:6px;padding:14px;background:var(--bg);margin-top:4px}
+  .mod-form-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .mod-form-row .form-group{flex:1;min-width:140px}
+  .mod-extras{margin-top:10px;padding:10px;background:var(--surface);border:1px dashed var(--border);border-radius:5px}
+  .mod-extras h4{font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+  .mod-history{margin-top:10px;max-height:140px;overflow-y:auto}
+  .mod-history-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+  .mod-history-item:last-child{border-bottom:none}
+  .transition-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;animation:fadeIn .15s ease}
+  .transition-wizard{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;animation:slideUp .2s ease}
+  .transition-wizard .tw-header{padding:18px 22px;border-bottom:1px solid var(--border)}
+  .transition-wizard .tw-header h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .transition-wizard .tw-header h2 .tw-icon{color:var(--purple);font-size:18px}
+  .transition-wizard .tw-header p{font-size:12px;color:var(--text3);margin-top:4px}
+  .tw-body{padding:22px}
+  .tw-section{margin-bottom:18px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:6px}
+  .tw-section h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+  .tw-section h3.expire-title{color:var(--red)}
+  .tw-section h3.new-title{color:var(--green)}
+  .tw-section h3.replace-title{color:var(--purple)}
+  .tw-summary{font-size:13px;color:var(--text2);line-height:1.6}
+  .tw-summary strong{color:var(--text)}
+  .tw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tw-footer{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid var(--border)}
+  .map-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:1100;padding:30px;animation:fadeIn .15s ease}
+  .map-viewer{background:var(--surface);border:1px solid var(--border);border-radius:10px;max-width:1000px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+  .map-viewer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .map-viewer-header h2{font-size:16px;font-weight:600}
+  .map-viewer-body{overflow:auto;padding:16px;flex:1}
+  .map-viewer-body img{width:100%;height:auto;border-radius:4px}
+  .detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;justify-content:flex-end;z-index:900;animation:fadeIn .15s ease}
+  .detail-panel{width:440px;max-width:90vw;background:var(--surface);border-left:1px solid var(--border);height:100%;overflow-y:auto;animation:slideLeft .2s ease;padding:24px}
+  @keyframes slideLeft{from{transform:translateX(20px);opacity:0}}
+  .detail-panel h2{font-size:18px;font-weight:600;margin-bottom:6px}
+  .detail-sub{color:var(--text3);font-size:13px;margin-bottom:20px}
+  .detail-section{margin-bottom:20px}
+  .detail-section h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px}
+  .detail-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+  .detail-row .dlabel{color:var(--text3)}
+  .detail-row .dvalue{color:var(--text);font-weight:500;text-align:right}
+  .detail-row .mono{font-family:var(--mono);font-size:12px}
+  .mod-log{list-style:none;padding:0}
+  .mod-log li{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+  .mod-log li:last-child{border-bottom:none}
+  .mod-log .mod-type{font-weight:600;color:var(--orange)}
+  .mod-log .mod-time{font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:8px}
+  .mod-log .mod-detail{color:var(--text2);margin-top:3px;font-size:12px}
+
+  /* Planogram modal overlay */
+  .plano-modal-overlay{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;animation:fadeIn .15s ease}
+  .plano-modal-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+  .plano-modal-topbar h2{font-size:15px;font-weight:600;color:var(--text)}
+  .plano-modal-topbar .plano-actions{display:flex;gap:8px}
+  .plano-modal-body{flex:1;overflow:hidden}
+
+  /* Print styles */
+  .print-sheet{display:none}
+  @media print{
+    body{background:#fff!important;color:#000!important}
+    .app,.plano-modal-overlay{display:none!important}
+    .modal-overlay,.detail-overlay,.map-overlay,.transition-overlay{display:none!important}
+    .print-sheet{display:block!important;padding:20px;font-family:'DM Sans',-apple-system,sans-serif}
+    .print-sheet .ps-header{text-align:center;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:24px}
+    .print-sheet .ps-header h1{font-size:20px;font-weight:700;letter-spacing:-0.3px}
+    .print-sheet .ps-header p{font-size:11px;color:#666;margin-top:4px}
+    .print-sheet .ps-card{border:2px solid #333;border-radius:6px;padding:16px 20px;margin-bottom:16px;page-break-inside:avoid}
+    .print-sheet .ps-loc{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;margin-bottom:2px}
+    .print-sheet .ps-type{font-size:12px;color:#666;margin-bottom:4px}
+    .print-sheet .ps-product{font-size:14px;font-weight:600;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #ddd}
+    .print-sheet .ps-notes{font-size:13px;color:#333;line-height:1.5}
+    .print-sheet .ps-notes-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:3px}
+    .print-sheet .ps-meta{font-size:10px;color:#999;margin-top:8px;display:flex;gap:16px}
+    .print-sheet .ps-plano{margin-top:12px;padding-top:12px;border-top:1px solid #ddd}
+    .print-sheet .ps-plano h4{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px;color:#666}
+    .print-sheet .ps-plano-shelf{display:flex;align-items:flex-end;gap:0;border-bottom:3px solid #8B4513;margin-bottom:6px;min-height:40px;background:#fafafa;padding:2px}
+    .print-sheet .ps-plano-product{display:inline-flex;flex-direction:column;align-items:center;border:1px solid #ddd;background:#fff;font-size:8px;text-align:center;overflow:hidden}
+    .print-sheet .ps-plano-product img{max-width:100%;max-height:100%;object-fit:contain}
+  }
+  @media(max-width:900px){.modal-map{display:none}.modal{border-radius:10px}}
+  @media(max-width:768px){.form-grid,.tw-grid{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start;gap:12px}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ═══════════════════════════════════════════════════════════════
+//  TRACKER CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
+
+const LOCATIONS={"Rear B Side":["1BR","2BR","3BR","4BR","5BR","6BR"],"Front B Side":["2BF","3BF","4BF","5BF","6BF"],"Rear A Side":["2AR","3AR","4AR","5AR","6AR"],"Front A Side":["2AF","3AF","6AF"],"Misc":["Metro Front Cold Beverage","Metro Rear Cold Beverage"]};
+const LOCATION_FLAT=[];Object.entries(LOCATIONS).forEach(([g,cs])=>cs.forEach(c=>LOCATION_FLAT.push({code:c,group:g})));LOCATION_FLAT.push({code:"__other__",group:"Other"});
+const DISPLAY_TYPES=["Endcap","Small Tall Metro","Small Short Metro","Medium Tall Metro","Medium Short Metro","Large Frozen Metro","Medium Frozen Metro","Front Table","Lobby Stack","Entrance Stack","Produce Stack","Dairy Table","Dairy Shelf","Franz Undertable","Wood Shelf","Mobile Refrigeration Unit"];
+const TRANSITION_MODS=["Moved","Downsized to Metro"];
+const DIRECTIVE_TAGS=["Corporate Mandatory","Regional Directive","Vendor Funded","Seasonal Program","Store Discretion","Test/Pilot","Clearance"];
+const STATUS_OPTIONS=[{value:"scheduled",label:"Scheduled",color:"#5B8DEF"},{value:"active",label:"Active",color:"#34C759"},{value:"expiring",label:"Expiring Soon",color:"#FF9F0A"},{value:"expired",label:"Expired",color:"#FF3B30"},{value:"archived",label:"Archived",color:"#8E8E93"}];
+const STORAGE_KEY="display_tracker_v6";
+
+// ═══════════════════════════════════════════════════════════════
+//  GITHUB SYNC ENGINE
+// ═══════════════════════════════════════════════════════════════
+const GH_CONFIG_KEY = "display_tracker_gh_config";
+const GH_SYNC_CACHE_KEY = "display_tracker_gh_cache";
+
+const GitHubSync = {
+  _sha: null,
+  _config: null,
+  _status: "idle", // idle | syncing | synced | error | offline
+  _lastSync: null,
+  _listeners: [],
+  _saveTimer: null,
+
+  onStatusChange(fn) { this._listeners.push(fn); return () => { this._listeners = this._listeners.filter(f => f !== fn); }; },
+  _notify() { this._listeners.forEach(fn => fn({ status: this._status, lastSync: this._lastSync })); },
+
+  setStatus(s) { this._status = s; this._notify(); },
+
+  getConfig() {
+    if (this._config) return this._config;
+    try { this._config = JSON.parse(localStorage.getItem(GH_CONFIG_KEY)); } catch {}
+    return this._config;
+  },
+
+  saveConfig(cfg) {
+    this._config = cfg;
+    localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
+  },
+
+  clearConfig() {
+    this._config = null;
+    this._sha = null;
+    localStorage.removeItem(GH_CONFIG_KEY);
+  },
+
+  isConfigured() {
+    const c = this.getConfig();
+    return c && c.token && c.owner && c.repo;
+  },
+
+  _headers() {
+    const c = this.getConfig();
+    return {
+      "Authorization": "Bearer " + c.token,
+      "Accept": "application/vnd.github.v3+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+  },
+
+  _url() {
+    const c = this.getConfig();
+    return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/data.json`;
+  },
+
+  async testConnection() {
+    const c = this.getConfig();
+    if (!c || !c.token || !c.owner || !c.repo) throw new Error("Missing configuration");
+    const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}`, {
+      headers: this._headers()
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || `HTTP ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async load() {
+    if (!this.isConfigured()) return null;
+    this.setStatus("syncing");
+    try {
+      const res = await fetch(this._url(), { headers: this._headers() });
+      if (res.status === 404) {
+        this.setStatus("synced");
+        return null; // data.json doesn't exist yet
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const file = await res.json();
+      this._sha = file.sha;
+      const content = JSON.parse(atob(file.content.replace(/\n/g, "")));
+      // Cache locally
+      localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(content));
+      this._lastSync = new Date();
+      this.setStatus("synced");
+      return content;
+    } catch (err) {
+      console.warn("GitHub sync load failed:", err);
+      this.setStatus(navigator.onLine ? "error" : "offline");
+      // Fall back to cached data
+      try { return JSON.parse(localStorage.getItem(GH_SYNC_CACHE_KEY)); } catch { return null; }
+    }
+  },
+
+  async save(data) {
+    if (!this.isConfigured()) {
+      // No GitHub configured, just save to localStorage
+      localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(data));
+      return;
+    }
+    this.setStatus("syncing");
+    try {
+      const body = {
+        message: "Update display tracker data",
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+      };
+      if (this._sha) body.sha = this._sha;
+
+      const res = await fetch(this._url(), {
+        method: "PUT",
+        headers: { ...this._headers(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (res.status === 409) {
+        // Conflict: re-fetch and retry once
+        console.warn("GitHub sync conflict, re-fetching...");
+        const fresh = await this.load();
+        if (fresh) {
+          // Merge strategy: our local data wins (last-write-wins for small teams)
+          body.sha = this._sha;
+          body.content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+          const retry = await fetch(this._url(), {
+            method: "PUT",
+            headers: { ...this._headers(), "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          if (!retry.ok) throw new Error(`Retry failed: HTTP ${retry.status}`);
+          const retryData = await retry.json();
+          this._sha = retryData.content.sha;
+        }
+      } else if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      } else {
+        const result = await res.json();
+        this._sha = result.content.sha;
+      }
+
+      localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(data));
+      this._lastSync = new Date();
+      this.setStatus("synced");
+    } catch (err) {
+      console.warn("GitHub sync save failed:", err);
+      localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(data));
+      this.setStatus(navigator.onLine ? "error" : "offline");
+    }
+  },
+
+  // Debounced save to avoid excessive API calls
+  debouncedSave(data, delayMs = 2000) {
+    clearTimeout(this._saveTimer);
+    // Always update local cache immediately
+    localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ records: data.records, nextId: data.nextId }));
+    this._saveTimer = setTimeout(() => this.save(data), delayMs);
+  }
+};
+
+// Listen for online/offline events
+window.addEventListener("online", () => {
+  if (GitHubSync._status === "offline") GitHubSync.setStatus("idle");
+});
+window.addEventListener("offline", () => { GitHubSync.setStatus("offline"); });
+
+const DEFAULT_RECORDS=[
+  {id:1,location:"1BR",otherLocation:"",displayType:"Endcap",product:"Coca-Cola Zero Sugar 12pk",vendor:"Coca-Cola",directive:"Corporate Mandatory",status:"active",setupDate:"2026-02-15",expectedLife:14,permanent:false,notes:"Super Bowl carryover promo",modifications:[],planogramData:null},
+  {id:2,location:"3BF",otherLocation:"",displayType:"Small Tall Metro",product:"Frito-Lay Variety Pack 28ct",vendor:"Frito-Lay",directive:"Vendor Funded",status:"active",setupDate:"2026-02-08",expectedLife:14,permanent:false,notes:"",modifications:[{type:"Downsized to Metro",date:"2026-02-12T10:30:00",detail:""}],planogramData:null},
+  {id:3,location:"Metro Front Cold Beverage",otherLocation:"",displayType:"Mobile Refrigeration Unit",product:"Bai Antioxidant Infusion Asst",vendor:"Dr Pepper/Keurig",directive:"Regional Directive",status:"active",setupDate:"2026-02-01",expectedLife:0,permanent:true,notes:"Vendor rep checks Wed",modifications:[{type:"Additional Product Incorporated",date:"2026-02-10T14:00:00",detail:"Bai Coconut Flavors 6pk"}],planogramData:null},
+  {id:4,location:"2AR",otherLocation:"",displayType:"Endcap",product:"5-Hour Energy Berry",vendor:"Living Essentials",directive:"Store Discretion",status:"scheduled",setupDate:"2026-02-22",expectedLife:14,permanent:false,notes:"Waiting on shipper",modifications:[],planogramData:null}
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  TRACKER HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getStatus(v){return STATUS_OPTIONS.find(s=>s.value===v)||STATUS_OPTIONS[0]}
+function getLocDisp(r){return r.location==="__other__"?(r.otherLocation||"Other"):r.location}
+function getLocGroup(c){const f=LOCATION_FLAT.find(l=>l.code===c);return f?f.group:""}
+function daysRem(sd,l){if(!sd||!l)return null;const e=new Date(sd+"T00:00:00");e.setDate(e.getDate()+l);const t=new Date();t.setHours(0,0,0,0);return Math.ceil((e-t)/864e5)}
+function fmtDate(d){if(!d)return"\u2014";return new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
+function fmtDateShort(d){if(!d)return"\u2014";return new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+function fmtDateTime(d){if(!d)return"\u2014";const dt=new Date(d);return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+dt.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}
+function dirClass(d){if(d.includes("Mandatory")||d.includes("Corporate"))return"mandatory";if(d.includes("Vendor"))return"vendor";if(d.includes("Seasonal"))return"seasonal";return""}
+function lifePct(r){if(r.permanent||!r.setupDate||!r.expectedLife)return 0;const el=(new Date()-new Date(r.setupDate+"T00:00:00"))/864e5;return Math.min(100,Math.max(0,(el/r.expectedLife)*100))}
+function lifeCol(p){if(p>=90)return"var(--red)";if(p>=70)return"var(--orange)";return"var(--green)"}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function buildLocOptions(){const opts=[];Object.entries(LOCATIONS).forEach(([g,cs])=>{opts.push({group:g,codes:cs})});return opts}
+function getSorted(list,sortCol,sortAsc){if(!sortCol)return list;return[...list].sort((a,b)=>{let va=sortCol==="location"?getLocDisp(a):(a[sortCol]||"").toString();let vb=sortCol==="location"?getLocDisp(b):(b[sortCol]||"").toString();va=va.toLowerCase();vb=vb.toLowerCase();if(va<vb)return sortAsc?-1:1;if(va>vb)return sortAsc?1:-1;return 0})}
+
+function persistData(records, nextId){
+  // Always save to localStorage immediately
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({records,nextId}))}catch(e){}
+  // Debounced save to GitHub (if configured)
+  // Note: storeMapB64 excluded from sync (too large, stays local per device)
+  GitHubSync.debouncedSave({
+    records, nextId,
+    templates: loadTemplates(),
+    dimCache: loadDimCache(),
+    planograms: _loadLocalPlanograms()
+  });
+}
+function loadStoredData(){
+  // Try GitHub cache first, then localStorage, then defaults
+  try{
+    const ghCache = localStorage.getItem(GH_SYNC_CACHE_KEY);
+    if(ghCache){const d=JSON.parse(ghCache);if(d.records){return{records:d.records.map(r=>({...r,planogramData:r.planogramData||null})),nextId:d.nextId||10}}}
+  }catch(e){}
+  try{const s=localStorage.getItem(STORAGE_KEY);if(s){const d=JSON.parse(s);return{records:(d.records||[]).map(r=>({...r,planogramData:r.planogramData||null})),nextId:d.nextId||10}}}catch(e){}
+  return{records:[...DEFAULT_RECORDS],nextId:10};
+}
+// Helper to gather standalone planogram saves from localStorage
+function _loadLocalPlanograms(){
+  const result = {};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("plano:")){try{result[k]=JSON.parse(localStorage.getItem(k))}catch{}}}
+  return result;
+}
+
+function handleExportCSV(records){
+  const hd=["Location","Location Group","Display Type","Product","Vendor","Directive","Status","Setup Date","Expected Life (days)","Permanent","Modifications","Notes"];
+  const rows=records.map(r=>{const ms=(r.modifications||[]).map(m=>m.type+(m.detail?": "+m.detail:"")+" ("+fmtDateTime(m.date)+")").join("; ");return[getLocDisp(r),getLocGroup(r.location),r.displayType,r.product,r.vendor,r.directive,getStatus(r.status).label,r.setupDate,r.permanent?"":r.expectedLife,r.permanent?"Yes":"No",ms,r.notes]});
+  let csv=[hd,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+  const b=new Blob([csv],{type:"text/csv"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="display-tracker-"+todayStr()+".csv";a.click();URL.revokeObjectURL(u);
+}
+
+// Declarative print helper: parse planogram JSON safely
+function parsePlanogramData(planogramData) {
+  if (!planogramData) return null;
+  try { return typeof planogramData === "string" ? JSON.parse(planogramData) : planogramData; } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PLANOGRAM CONSTANTS, UTILITIES & COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
+// ── Unit system ──
+const UNITS = {
+  mm: { label: "mm", factor: 1, decimals: 0 },
+  cm: { label: "cm", factor: 0.1, decimals: 1 },
+  inches: { label: "in", factor: 1 / 25.4, decimals: 2 },
+  feet: { label: "ft", factor: 1 / 304.8, decimals: 3 },
+};
+const UnitCtx = createContext("inches");
+function fromMM(val, unit) { if (val == null || val === "") return ""; return +(val * UNITS[unit].factor).toFixed(UNITS[unit].decimals); }
+function toMM(val, unit) { if (val == null || val === "") return null; return Math.round(+val / UNITS[unit].factor); }
+function fmtDim(val, unit) { if (val == null) return "\u2014"; return `${fromMM(val, unit)}${UNITS[unit].label}`; }
+
+// ── Template & cache stores ──
+function loadTemplates() {
+  // Try GitHub cache first
+  try { const gh = JSON.parse(localStorage.getItem(GH_SYNC_CACHE_KEY)); if (gh && gh.templates) return gh.templates; } catch {}
+  try { return JSON.parse(localStorage.getItem("plano-dim-templates") || "[]"); } catch { return []; }
+}
+function saveTemplates(t) { localStorage.setItem("plano-dim-templates", JSON.stringify(t)); }
+function loadDimCache() {
+  try { const gh = JSON.parse(localStorage.getItem(GH_SYNC_CACHE_KEY)); if (gh && gh.dimCache) return gh.dimCache; } catch {}
+  try { return JSON.parse(localStorage.getItem("plano-dim-cache") || "{}"); } catch { return {}; }
+}
+function saveDimCache(c) { localStorage.setItem("plano-dim-cache", JSON.stringify(c)); }
+
+const ONE_INCH_MM = 25.4;
+const DEFAULT_SHELF_H = Math.round(12 * ONE_INCH_MM); // 12 inches
+const MIN_SHELF_H = Math.round(4 * ONE_INCH_MM); // 4 inches
+const MAX_SHELF_H = Math.round(24 * ONE_INCH_MM); // 24 inches
+const SHELF_COLORS = ["#8B4513", "#A0522D", "#6B3410"];
+const DEFAULT_PW = 50; const DEFAULT_PH = 70;
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ── Storage helpers (localStorage wrapper matching old API, with GitHub cache fallback) ──
+const storage = {
+  async get(key) {
+    // Check GitHub cache for planogram saves
+    if (key.startsWith("plano:")) {
+      try { const gh = JSON.parse(localStorage.getItem(GH_SYNC_CACHE_KEY)); if (gh && gh.planograms && gh.planograms[key]) return { key, value: JSON.stringify(gh.planograms[key]) }; } catch {}
+    }
+    const v = localStorage.getItem(key); if (v === null) throw new Error("not found"); return { key, value: v };
+  },
+  async set(key, value) { localStorage.setItem(key, value); return { key, value }; },
+  async delete(key) { localStorage.removeItem(key); return { key, deleted: true }; },
+  async list(prefix = "") {
+    const keys = [];
+    // Include planogram keys from GitHub cache
+    if (prefix === "plano:") {
+      try { const gh = JSON.parse(localStorage.getItem(GH_SYNC_CACHE_KEY)); if (gh && gh.planograms) Object.keys(gh.planograms).forEach(k => { if (k.startsWith(prefix) && !keys.includes(k)) keys.push(k); }); } catch {}
+    }
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(prefix) && !keys.includes(k)) keys.push(k); }
+    return { keys };
+  },
+};
+
+// ── Auto-trim: detect whitespace borders via canvas ──
+function autoTrimImage(imgUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height).data;
+        const thresh = 240;
+        const isWhite = (i) => d[i] > thresh && d[i + 1] > thresh && d[i + 2] > thresh;
+        let top = 0, bottom = c.height - 1, left = 0, right = c.width - 1;
+        outer1: for (let y = 0; y < c.height; y++) { for (let x = 0; x < c.width; x++) { if (!isWhite((y * c.width + x) * 4)) { top = y; break outer1; } } }
+        outer2: for (let y = c.height - 1; y >= 0; y--) { for (let x = 0; x < c.width; x++) { if (!isWhite((y * c.width + x) * 4)) { bottom = y; break outer2; } } }
+        outer3: for (let x = 0; x < c.width; x++) { for (let y = 0; y < c.height; y++) { if (!isWhite((y * c.width + x) * 4)) { left = x; break outer3; } } }
+        outer4: for (let x = c.width - 1; x >= 0; x--) { for (let y = 0; y < c.height; y++) { if (!isWhite((y * c.width + x) * 4)) { right = x; break outer4; } } }
+        resolve({ cropT: Math.round((top / c.height) * 100), cropB: Math.round(((c.height - 1 - bottom) / c.height) * 100), cropL: Math.round((left / c.width) * 100), cropR: Math.round(((c.width - 1 - right) / c.width) * 100) });
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = imgUrl;
+  });
+}
+
+// ══════════════════════════════════════
+//  Template Manager Modal
+// ══════════════════════════════════════
+function TemplateManagerModal({ onClose }) {
+  const unit = useContext(UnitCtx);
+  const [templates, setTemplates] = useState(loadTemplates());
+  const [name, setName] = useState(""); const [w, setW] = useState(""); const [h, setH] = useState(""); const [d, setD] = useState("");
+  const lbl = UNITS[unit].label;
+  const addTemplate = () => {
+    if (!name.trim()) return;
+    const next = [...templates, { id: uid(), name: name.trim(), width: toMM(w, unit), height: toMM(h, unit), depth: toMM(d, unit) }];
+    setTemplates(next); saveTemplates(next); setName(""); setW(""); setH(""); setD("");
+  };
+  const deleteTemplate = (id) => { const next = templates.filter((t) => t.id !== id); setTemplates(next); saveTemplates(next); };
+  const inp = { flex: 1, border: "1px solid #d1d5db", borderRadius: 4, padding: "4px 6px", fontSize: 13 };
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 25px 50px rgba(0,0,0,0.25)", padding: 20, width: 420, maxHeight: "80vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Dimension Templates</h3>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Reusable size profiles — apply to any product via the edit modal.</p>
+        <div style={{ padding: 10, background: "#f9fafb", borderRadius: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 6 }}><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Template name (e.g. Standard Can)" style={{ ...inp, flex: 2 }} /></div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+            <input type="number" step="any" value={w} onChange={(e) => setW(e.target.value)} placeholder={`W (${lbl})`} style={inp} />
+            <span style={{ color: "#ccc" }}>{"\u00d7"}</span>
+            <input type="number" step="any" value={h} onChange={(e) => setH(e.target.value)} placeholder={`H (${lbl})`} style={inp} />
+            <span style={{ color: "#ccc" }}>{"\u00d7"}</span>
+            <input type="number" step="any" value={d} onChange={(e) => setD(e.target.value)} placeholder={`D (${lbl})`} style={inp} />
+          </div>
+          <button onClick={addTemplate} disabled={!name.trim()} style={{ padding: "5px 12px", fontSize: 12, background: name.trim() ? "#10b981" : "#d1d5db", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>+ Add Template</button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {templates.length === 0 && <p style={{ color: "#9ca3af", fontSize: 13, textAlign: "center", padding: 16 }}>No templates yet</p>}
+          {templates.map((t) => (
+            <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 8px", borderRadius: 4, border: "1px solid #f3f4f6", marginBottom: 3 }}>
+              <div><span style={{ fontSize: 13, fontWeight: 500 }}>{t.name}</span><span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 8 }}>{fmtDim(t.width, unit)} {"\u00d7"} {fmtDim(t.height, unit)}</span></div>
+              <button onClick={() => deleteTemplate(t.id)} style={{ fontSize: 11, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>Delete</button>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{ marginTop: 12, fontSize: 13, color: "#6b7280", background: "none", border: "none", cursor: "pointer", alignSelf: "flex-end" }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Dimension + Crop Editor Modal
+// ══════════════════════════════════════
+function DimModal({ product, onSave, onCancel }) {
+  const unit = useContext(UnitCtx);
+  const [w, setW] = useState(product.width != null ? fromMM(product.width, unit) : "");
+  const [h, setH] = useState(product.height != null ? fromMM(product.height, unit) : "");
+  const [d, setD] = useState(product.depth != null ? fromMM(product.depth, unit) : "");
+  const [facings, setFacings] = useState(product.facings || 1);
+  const [stacks, setStacks] = useState(product.stacks || 1);
+  const [gap, setGap] = useState(product.gap != null ? product.gap : 0);
+  const [cropT, setCropT] = useState(product.cropT || 0);
+  const [cropB, setCropB] = useState(product.cropB || 0);
+  const [cropL, setCropL] = useState(product.cropL || 0);
+  const [cropR, setCropR] = useState(product.cropR || 0);
+  const [trimming, setTrimming] = useState(false);
+  const [trimError, setTrimError] = useState(false);
+  const [templates] = useState(loadTemplates());
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const lbl = UNITS[unit].label;
+
+  const applyTemplate = (tpl) => {
+    if (tpl.width != null) setW(fromMM(tpl.width, unit));
+    if (tpl.height != null) setH(fromMM(tpl.height, unit));
+    if (tpl.depth != null) setD(fromMM(tpl.depth, unit));
+  };
+
+  const handleAutoTrim = async () => {
+    if (!product.image_url) return;
+    setTrimming(true); setTrimError(false);
+    const result = await autoTrimImage(product.image_url);
+    setTrimming(false);
+    if (result) { setCropT(result.cropT); setCropB(result.cropB); setCropL(result.cropL); setCropR(result.cropR); }
+    else setTrimError(true);
+  };
+
+  const handleSave = () => {
+    const dims = { width: toMM(w, unit), height: toMM(h, unit), depth: toMM(d, unit), facings, stacks, gap, cropT, cropB, cropL, cropR };
+    if (product.barcode && dims.width && dims.height) {
+      const cache = loadDimCache();
+      cache[product.barcode] = { width: dims.width, height: dims.height, depth: dims.depth, cropT, cropB, cropL, cropR };
+      saveDimCache(cache);
+    }
+    if (saveAsTemplate && tplName.trim()) {
+      const tpls = loadTemplates();
+      tpls.push({ id: uid(), name: tplName.trim(), width: dims.width, height: dims.height, depth: dims.depth });
+      saveTemplates(tpls);
+    }
+    onSave(dims);
+  };
+
+  const row = { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 };
+  const sp = { width: 90, color: "#6b7280", fontSize: 13, flexShrink: 0 };
+  const inp = { flex: 1, border: "1px solid #d1d5db", borderRadius: 4, padding: "4px 8px", fontSize: 14 };
+  const section = { fontSize: 12, color: "#6b7280", margin: "10px 0 6px", padding: "6px 8px", background: "#f9fafb", borderRadius: 6 };
+  const cropPreviewClip = `inset(${cropT}% ${cropR}% ${cropB}% ${cropL}%)`;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }} onClick={onCancel}>
+      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 25px 50px rgba(0,0,0,0.25)", padding: 20, width: 440, maxHeight: "92vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Edit: {product.name ? product.name.slice(0, 40) : ""}</h3>
+        {product.barcode && <div style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 8 }}>UPC: {product.barcode}</div>}
+
+        {templates.length > 0 && (
+          <div style={section}>
+            <strong>Apply Template</strong>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+              {templates.map((t) => <button key={t.id} onClick={() => applyTemplate(t)} style={{ padding: "3px 8px", fontSize: 11, background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", borderRadius: 4, cursor: "pointer" }}>{t.name}</button>)}
+            </div>
+          </div>
+        )}
+
+        <div style={section}><strong>Dimensions</strong> ({lbl})</div>
+        <label style={row}><span style={sp}>Width ({lbl})</span><input type="number" step="any" value={w} onChange={(e) => setW(e.target.value)} style={inp} /></label>
+        <label style={row}><span style={sp}>Height ({lbl})</span><input type="number" step="any" value={h} onChange={(e) => setH(e.target.value)} style={inp} /></label>
+        <label style={row}><span style={sp}>Depth ({lbl})</span><input type="number" step="any" value={d} onChange={(e) => setD(e.target.value)} style={inp} /></label>
+
+        <div style={section}><strong>Placement</strong></div>
+        <label style={row}><span style={sp}>Facings ({"\u2192"})</span><input type="number" min={1} max={20} value={facings} onChange={(e) => setFacings(Math.max(1, +e.target.value || 1))} style={inp} /></label>
+        <label style={row}><span style={sp}>Stacks ({"\u2191"})</span><input type="number" min={1} max={10} value={stacks} onChange={(e) => setStacks(Math.max(1, +e.target.value || 1))} style={inp} /></label>
+
+        <div style={section}><strong>Spacing</strong></div>
+        <label style={row}>
+          <span style={sp}>Gap (px)</span>
+          <input type="range" min={0} max={20} value={gap} onChange={(e) => setGap(+e.target.value)} style={{ flex: 1 }} />
+          <span style={{ fontSize: 12, color: "#6b7280", width: 30, textAlign: "right" }}>{gap}</span>
+        </label>
+
+        {product.image_url && (
+          <React.Fragment>
+            <div style={section}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <strong>Image Crop</strong>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={handleAutoTrim} disabled={trimming} style={{ padding: "3px 10px", fontSize: 11, background: trimming ? "#d1d5db" : "#8b5cf6", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                    {trimming ? "Trimming..." : "Auto-Trim"}
+                  </button>
+                  <button onClick={() => { setCropT(0); setCropB(0); setCropL(0); setCropR(0); }} style={{ padding: "3px 10px", fontSize: 11, background: "#e5e7eb", color: "#4b5563", border: "none", borderRadius: 4, cursor: "pointer" }}>Reset</button>
+                </div>
+              </div>
+              {trimError && <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 4 }}>Auto-trim failed (CORS). Use manual sliders below.</div>}
+            </div>
+            <div style={{ display: "flex", gap: 16, marginBottom: 8, alignItems: "flex-start" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 4 }}>Original</div>
+                <div style={{ width: 80, height: 100, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img src={product.image_url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                </div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 4 }}>Cropped</div>
+                <div style={{ width: 80, height: 100, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img src={product.image_url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", clipPath: cropPreviewClip }} />
+                </div>
+              </div>
+              <div style={{ flex: 1, fontSize: 11, color: "#6b7280", paddingTop: 14 }}>
+                Crop removes whitespace from the image edges. Auto-Trim detects white borders automatically. Adjust sliders for manual control.
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 30px", gap: "4px 8px", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Top</span>
+              <input type="range" min={0} max={50} value={cropT} onChange={(e) => setCropT(+e.target.value)} />
+              <span style={{ fontSize: 11, color: "#6b7280", textAlign: "right" }}>{cropT}%</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Bottom</span>
+              <input type="range" min={0} max={50} value={cropB} onChange={(e) => setCropB(+e.target.value)} />
+              <span style={{ fontSize: 11, color: "#6b7280", textAlign: "right" }}>{cropB}%</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Left</span>
+              <input type="range" min={0} max={50} value={cropL} onChange={(e) => setCropL(+e.target.value)} />
+              <span style={{ fontSize: 11, color: "#6b7280", textAlign: "right" }}>{cropL}%</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Right</span>
+              <input type="range" min={0} max={50} value={cropR} onChange={(e) => setCropR(+e.target.value)} />
+              <span style={{ fontSize: 11, color: "#6b7280", textAlign: "right" }}>{cropR}%</span>
+            </div>
+          </React.Fragment>
+        )}
+
+        <div style={{ marginTop: 12, padding: 8, background: "#f0fdf4", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12 }}>
+            <input type="checkbox" checked={saveAsTemplate} onChange={(e) => setSaveAsTemplate(e.target.checked)} />
+            Save dimensions as new template
+          </label>
+          {saveAsTemplate && <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Template name" style={{ marginTop: 6, width: "100%", boxSizing: "border-box", border: "1px solid #d1d5db", borderRadius: 4, padding: "4px 8px", fontSize: 13 }} />}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+          <button onClick={onCancel} style={{ padding: "6px 12px", fontSize: 13, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+          <button onClick={handleSave} style={{ padding: "6px 12px", fontSize: 13, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Save / Load Modal
+// ══════════════════════════════════════
+function SaveLoadModal({ mode, saves, onSave, onLoad, onDelete, onClose }) {
+  const [name, setName] = useState("");
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 25px 50px rgba(0,0,0,0.25)", padding: 20, width: 384, maxHeight: "80vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ fontWeight: 700, marginBottom: 12 }}>{mode === "save" ? "Save Planogram" : "Load Planogram"}</h3>
+        {mode === "save" && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Planogram name..." style={{ flex: 1, border: "1px solid #d1d5db", borderRadius: 4, padding: "6px 12px", fontSize: 14 }} onKeyDown={(e) => e.key === "Enter" && name.trim() && onSave(name.trim())} />
+            <button disabled={!name.trim()} onClick={() => onSave(name.trim())} style={{ padding: "6px 12px", background: !name.trim() ? "#93c5fd" : "#3b82f6", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Save</button>
+          </div>
+        )}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {saves.length === 0 && <p style={{ color: "#9ca3af", fontSize: 14, textAlign: "center", padding: "16px 0" }}>No saved planograms</p>}
+          {saves.map((s) => (
+            <div key={s.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 8, borderRadius: 4, border: "1px solid #f3f4f6", marginBottom: 4 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>{s.shelves} shelves {"\u00b7"} {s.products} products {"\u00b7"} {new Date(s.date).toLocaleDateString()}</div>
+              </div>
+              <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+                {mode === "load" && <button onClick={() => onLoad(s.key)} style={{ padding: "4px 8px", fontSize: 12, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Load</button>}
+                <button onClick={() => onDelete(s.key)} style={{ padding: "4px 8px", fontSize: 12, background: "#fee2e2", color: "#dc2626", border: "none", borderRadius: 4, cursor: "pointer" }}>Del</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{ marginTop: 12, fontSize: 13, color: "#6b7280", background: "none", border: "none", cursor: "pointer", alignSelf: "flex-end" }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Search Product Card
+// ══════════════════════════════════════
+function ProductCard({ product }) {
+  const unit = useContext(UnitCtx);
+  return (
+    <div draggable onDragStart={(e) => { e.dataTransfer.setData("application/json", JSON.stringify(product)); }}
+      style={{ display: "flex", alignItems: "center", gap: 8, padding: 6, background: "#fff", borderRadius: 4, border: "1px solid #e5e7eb", cursor: "grab", marginBottom: 4 }}>
+      {product.image_url ? (
+        <img src={product.image_url} alt="" style={{ width: 32, height: 32, objectFit: "contain", background: "#f9fafb", borderRadius: 4, flexShrink: 0 }} onError={(e) => (e.target.style.display = "none")} />
+      ) : (
+        <div style={{ width: 32, height: 32, background: "#f3f4f6", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 9, flexShrink: 0 }}>?</div>
+      )}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</div>
+        {product.brand && <div style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.brand}</div>}
+        {product.width && product.height && <div style={{ fontSize: 10, color: "#c0c0c0" }}>{fmtDim(product.width, unit)} {"\u00d7"} {fmtDim(product.height, unit)}</div>}
+        {product.hasCachedDims && <div style={{ fontSize: 9, color: "#10b981" }}>{"\u2713"} cached dims</div>}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Product on Shelf
+// ══════════════════════════════════════
+function ShelfProduct({ product, shelfH, pxPerMM, selected, onSelect, onEdit, onRemove, onResetDims, cleanView }) {
+  const unit = useContext(UnitCtx);
+  const hasDims = product.width && product.height;
+  const unitW = hasDims ? product.width * pxPerMM : 30;
+  const unitH = hasDims ? Math.min((shelfH - 8) / (product.stacks || 1), product.height * pxPerMM) : Math.min(DEFAULT_PH, (shelfH - 8) / (product.stacks || 1));
+  const facings = product.facings || 1;
+  const stacks = product.stacks || 1;
+  const needsDims = !hasDims;
+  const [hover, setHover] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState(null);
+  const gapR = product.gap != null ? product.gap : 0;
+  const hasCrop = (product.cropT || 0) + (product.cropB || 0) + (product.cropL || 0) + (product.cropR || 0) > 0;
+  const clipPath = hasCrop ? `inset(${product.cropT || 0}% ${product.cropR || 0}% ${product.cropB || 0}% ${product.cropL || 0}%)` : "none";
+
+  // Close context menu on any outside click
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const close = () => setCtxMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [ctxMenu]);
+
+  const handleContextMenu = (e) => {
+    if (cleanView) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const renderUnit = (key) => (
+    <div key={key} style={{ width: unitW, height: unitH, overflow: "hidden", lineHeight: 0, fontSize: 0, display: "flex", alignItems: "flex-end" }}>
+      {product.image_url ? (
+        <img src={product.image_url} alt="" style={{ width: "100%", height: "auto", display: "block", margin: 0, padding: 0, clipPath: clipPath }} onError={(e) => { e.target.style.display = "none"; if (e.target.parentNode.lastChild) e.target.parentNode.lastChild.style.display = "flex"; }} />
+      ) : null}
+      <div style={{ width: "100%", height: "100%", background: "#dbeafe", border: "1px solid #93c5fd", display: product.image_url ? "none" : "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 7, lineHeight: "normal", boxSizing: "border-box" }}>
+        {product.name ? product.name.slice(0, 20) : ""}
+      </div>
+    </div>
+  );
+
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onContextMenu={handleContextMenu}
+      style={{
+        position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+        flexShrink: 0, padding: 0, lineHeight: 0,
+        marginRight: gapR, marginTop: 0, marginBottom: 0, marginLeft: 0,
+        outline: selected ? "2px solid #3b82f6" : "none", outlineOffset: -2,
+        background: selected ? "rgba(219,234,254,0.5)" : needsDims ? "rgba(251,191,36,0.1)" : "transparent",
+      }}
+      title={`${product.name}\n${fmtDim(product.width, unit)} \u00d7 ${fmtDim(product.height, unit)}\nFacings: ${facings} \u00b7 Stacks: ${stacks}\nShelf width used: ${hasDims ? fmtDim(product.width * facings, unit) : "unknown"}\nRight-click for options`}
+      onClick={(e) => onSelect(e)} onDoubleClick={() => onEdit()}>
+      {/* Context menu */}
+      {ctxMenu && (
+        <div style={{ position: "fixed", left: ctxMenu.x, top: ctxMenu.y, zIndex: 100, background: "#fff", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", border: "1px solid #e5e7eb", padding: "4px 0", minWidth: 140 }}>
+          <div style={{ padding: "4px 12px", fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>{product.name ? product.name.slice(0, 25) : "Product"}</div>
+          <button onClick={(e) => { e.stopPropagation(); setCtxMenu(null); onEdit(); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 12px", fontSize: 12, background: "none", border: "none", cursor: "pointer", color: "#374151" }} onMouseEnter={(e) => e.target.style.background="#f3f4f6"} onMouseLeave={(e) => e.target.style.background="none"}>{"\u270e"} Edit Dimensions</button>
+          <button onClick={(e) => { e.stopPropagation(); setCtxMenu(null); onResetDims(); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 12px", fontSize: 12, background: "none", border: "none", cursor: "pointer", color: "#f59e0b" }} onMouseEnter={(e) => e.target.style.background="#f3f4f6"} onMouseLeave={(e) => e.target.style.background="none"}>{"\u21ba"} Reset Dimensions</button>
+          <button onClick={(e) => { e.stopPropagation(); setCtxMenu(null); onRemove(); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 12px", fontSize: 12, background: "none", border: "none", cursor: "pointer", color: "#ef4444" }} onMouseEnter={(e) => e.target.style.background="#f3f4f6"} onMouseLeave={(e) => e.target.style.background="none"}>{"\u00d7"} Remove</button>
+        </div>
+      )}
+      {!cleanView && hover && (
+        <div style={{ position: "absolute", top: -6, right: -4, display: "flex", gap: 2, zIndex: 10 }}>
+          <button onClick={(e) => { e.stopPropagation(); onEdit(); }} style={{ width: 16, height: 16, background: "#3b82f6", color: "#fff", border: "none", borderRadius: "50%", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{"\u270e"}</button>
+          <button onClick={(e) => { e.stopPropagation(); onRemove(); }} style={{ width: 16, height: 16, background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{"\u00d7"}</button>
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column-reverse", gap: 0, margin: 0, padding: 0, lineHeight: 0 }}>
+        {Array.from({ length: stacks }).map((_, si) => (
+          <div key={si} style={{ display: "flex", gap: 0, margin: 0, padding: 0, lineHeight: 0 }}>
+            {Array.from({ length: facings }).map((_, fi) => renderUnit(`${si}-${fi}`))}
+          </div>
+        ))}
+      </div>
+      {(facings > 1 || stacks > 1) && <div style={{ position: "absolute", bottom: 0, left: 0, background: "#374151", color: "#fff", fontSize: 7, padding: "0 3px", borderRadius: "0 3px 0 0", lineHeight: "12px" }}>{facings > 1 ? `${facings}W` : ""}{facings > 1 && stacks > 1 ? "\u00b7" : ""}{stacks > 1 ? `${stacks}H` : ""}</div>}
+      {!cleanView && needsDims && <div style={{ position: "absolute", top: 0, left: 0, background: "#fbbf24", color: "#fff", fontSize: 7, padding: "0 3px", borderRadius: "0 0 3px 0" }}>no dims</div>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Shelf
+// ══════════════════════════════════════
+function Shelf({ shelf, index, total, onDrop, onUpdateProducts, onMoveUp, onMoveDown, onRemoveShelf, onResizeShelf, selected, onSelect, onEdit, clipboard, onPaste, cleanView, shelfThickness, shelfWidthMM }) {
+  const unit = useContext(UnitCtx);
+  const [dragOver, setDragOver] = useState(false);
+  const [dragIdx, setDragIdx] = useState(null);
+  const containerRef = useRef(null);
+  const [containerW, setContainerW] = useState(800);
+  const shelfHeightMM = shelf.height || DEFAULT_SHELF_H;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => { for (const e of entries) setContainerW(e.contentRect.width); });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const pxPerMM = containerW / shelfWidthMM;
+  const shelfHpx = Math.max(40, shelfHeightMM * pxPerMM); // rendered pixel height
+  const usedMM = shelf.products.reduce((sum, p) => p.width ? sum + p.width * (p.facings || 1) : sum, 0);
+  const unknownCount = shelf.products.filter((p) => !p.width).length;
+  const fillPct = shelfWidthMM > 0 ? Math.min(100, (usedMM / shelfWidthMM) * 100) : 0;
+  const overFill = usedMM > shelfWidthMM;
+  const remainMM = shelfWidthMM - usedMM;
+
+  // Step shelf height by 1 inch (25.4mm)
+  const stepHeight = (dir) => {
+    const next = shelfHeightMM + dir * Math.round(ONE_INCH_MM);
+    if (next >= MIN_SHELF_H && next <= MAX_SHELF_H) onResizeShelf(index, next);
+  };
+
+  const handleDragOver = (e) => { if (cleanView) return; e.preventDefault(); setDragOver(true); };
+  const handleDrop = (e) => {
+    if (cleanView) return;
+    e.preventDefault(); setDragOver(false);
+    const raw = e.dataTransfer.getData("text/plain");
+    if (raw && raw.startsWith("reorder:")) { const fi = parseInt(raw.split(":")[1]); const p = [...shelf.products]; const [it] = p.splice(fi, 1); p.push(it); onUpdateProducts(index, p); return; }
+    try { const data = JSON.parse(e.dataTransfer.getData("application/json")); if (data && data.id) onDrop(index, data); } catch(ex) {}
+  };
+  const pDragStart = (pi) => (e) => { if (cleanView) { e.preventDefault(); return; } setDragIdx(pi); e.dataTransfer.setData("text/plain", `reorder:${pi}`); };
+  const pDrop = (ti) => (e) => {
+    if (cleanView) return;
+    e.preventDefault(); e.stopPropagation();
+    const raw = e.dataTransfer.getData("text/plain");
+    if (raw && raw.startsWith("reorder:")) { const fi = parseInt(raw.split(":")[1]); const p = [...shelf.products]; const [it] = p.splice(fi, 1); p.splice(ti, 0, it); onUpdateProducts(index, p); }
+    setDragIdx(null);
+  };
+  const btn = { background: "none", border: "none", fontSize: 12, padding: "0 4px", color: "#9ca3af", cursor: "pointer" };
+  const stepBtn = { background: "#e5e7eb", border: "none", fontSize: 10, padding: "1px 5px", color: "#374151", cursor: "pointer", borderRadius: 3, lineHeight: "14px" };
+
+  return (
+    <div style={{ position: "relative", marginBottom: cleanView ? 0 : 8 }}>
+      {!cleanView && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3, padding: "0 4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>Shelf {index + 1}</span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>H: {fmtDim(shelfHeightMM, unit)}</span>
+            <button onClick={() => stepHeight(-1)} disabled={shelfHeightMM <= MIN_SHELF_H} style={{ ...stepBtn, opacity: shelfHeightMM <= MIN_SHELF_H ? 0.3 : 1 }}>{"\u25bc"} 1"</button>
+            <button onClick={() => stepHeight(1)} disabled={shelfHeightMM >= MAX_SHELF_H} style={{ ...stepBtn, opacity: shelfHeightMM >= MAX_SHELF_H ? 0.3 : 1 }}>{"\u25b2"} 1"</button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <button onClick={() => onMoveUp(index)} disabled={index === 0} style={{ ...btn, opacity: index === 0 ? 0.3 : 1 }}>{"\u25b2"}</button>
+            <button onClick={() => onMoveDown(index)} disabled={index === total - 1} style={{ ...btn, opacity: index === total - 1 ? 0.3 : 1 }}>{"\u25bc"}</button>
+            <button onClick={() => onRemoveShelf(index)} style={{ ...btn, color: "#f87171" }}>{"\u2715"}</button>
+          </div>
+        </div>
+      )}
+      <div ref={containerRef} onDragOver={handleDragOver} onDragLeave={() => setDragOver(false)} onDrop={handleDrop}
+        style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 0, padding: cleanView ? "0" : "2px 2px 0", overflowX: "auto", borderRadius: cleanView ? 0 : "4px 4px 0 0", minHeight: shelfHpx, height: shelfHpx, background: dragOver ? "#eff6ff" : cleanView ? "#fafafa" : "#f9fafb", outline: dragOver ? "2px solid #93c5fd" : "none" }}>
+        {!cleanView && shelf.products.length === 0 && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#d1d5db", fontSize: 14, pointerEvents: "none" }}>Drop products here</div>}
+        {shelf.products.map((p, pi) => (
+          <div key={p._uid} draggable={!cleanView} onDragStart={pDragStart(pi)} onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} onDrop={pDrop(pi)} style={{ cursor: cleanView ? "default" : "grab", opacity: dragIdx === pi ? 0.4 : 1, margin: 0, padding: 0, lineHeight: 0 }}>
+            <ShelfProduct product={p} shelfH={shelfHpx} pxPerMM={pxPerMM} selected={!cleanView && selected.has(p._uid)} onSelect={(e) => { if (!cleanView) onSelect(index, pi, p._uid, e); }} onEdit={() => { if (!cleanView) onEdit(index, pi); }} onRemove={() => { if (!cleanView) onUpdateProducts(index, shelf.products.filter((_, i) => i !== pi)); }} onResetDims={() => { if (cleanView) return; const updated = [...shelf.products]; const prod = updated[pi]; if (prod.barcode) { const cache = loadDimCache(); delete cache[prod.barcode]; saveDimCache(cache); } updated[pi] = { ...prod, width: null, height: null, depth: null, cropT: 0, cropB: 0, cropL: 0, cropR: 0 }; onUpdateProducts(index, updated); }} cleanView={cleanView} />
+          </div>
+        ))}
+      </div>
+      <div style={{ height: Math.max(4, shelfThickness * pxPerMM), borderRadius: cleanView ? 0 : "0 0 4px 4px", boxShadow: cleanView ? "none" : "0 2px 4px rgba(0,0,0,0.15)", background: `linear-gradient(to bottom, ${SHELF_COLORS[index % 3]}, ${SHELF_COLORS[(index + 1) % 3]})`, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, width: `${Math.min(100, fillPct)}%`, height: "100%", background: overFill ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.15)", transition: "width 0.2s" }} />
+      </div>
+      {!cleanView && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "2px 6px", fontSize: 10 }}>
+          <span style={{ color: overFill ? "#ef4444" : "#6b7280", fontWeight: overFill ? 600 : 400 }}>
+            {fmtDim(usedMM, unit)} / {fmtDim(shelfWidthMM, unit)} used ({fillPct.toFixed(1)}%)
+            {unknownCount > 0 && <span style={{ color: "#f59e0b" }}> {"\u00b7"} {unknownCount} without dims</span>}
+          </span>
+          <span style={{ color: overFill ? "#ef4444" : "#10b981" }}>
+            {overFill ? `Over by ${fmtDim(Math.abs(remainMM), unit)}` : `${fmtDim(remainMM, unit)} remaining`}
+          </span>
+        </div>
+      )}
+      {!cleanView && clipboard.length > 0 && (
+        <button onClick={() => onPaste(index)} style={{ marginTop: 1, marginLeft: 4, fontSize: 11, color: "#22c55e", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>{"\u2935"} Paste {clipboard.length}</button>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+//  Unit Selector
+// ══════════════════════════════════════
+function UnitSelector({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <span style={{ fontSize: 11, color: "#6b7280" }}>Units:</span>
+      {Object.entries(UNITS).map(([key, u]) => (
+        <button key={key} onClick={() => onChange(key)} style={{ padding: "3px 8px", fontSize: 11, border: "1px solid", cursor: "pointer", borderRadius: 4, background: value === key ? "#3b82f6" : "#fff", color: value === key ? "#fff" : "#6b7280", borderColor: value === key ? "#3b82f6" : "#d1d5db" }}>{u.label}</button>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PLANOGRAM BUILDER (forwardRef, accepts initialData + isEmbedded)
+// ═══════════════════════════════════════════════════════════════
+const PlanogramBuilder = React.forwardRef(function PlanogramBuilder({ initialData, isEmbedded }, ref) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [unit, setUnit] = useState("inches");
+  const [shelves, setShelves] = useState([
+    { id: "s1", height: DEFAULT_SHELF_H, products: [] },
+    { id: "s2", height: DEFAULT_SHELF_H, products: [] },
+    { id: "s3", height: DEFAULT_SHELF_H, products: [] },
+    { id: "s4", height: DEFAULT_SHELF_H, products: [] },
+  ]);
+  const [planogramTitle, setPlanogramTitle] = useState("New Planogram");
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [clipboard, setClipboard] = useState([]);
+  const [editTarget, setEditTarget] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [saves, setSaves] = useState([]);
+  const [toast, setToast] = useState(null);
+  const [cleanView, setCleanView] = useState(false);
+  const [shelfThickness, setShelfThickness] = useState(Math.round(1.5 * ONE_INCH_MM));
+  const [shelfWidthMM, setShelfWidthMM] = useState(Math.round(48 * 25.4));
+  const [zoom, setZoom] = useState(100);
+  const shelfAreaRef = useRef(null);
+  const [shelfAreaH, setShelfAreaH] = useState(600);
+
+  // Load initialData on mount
+  useEffect(() => {
+    if (!initialData) return;
+    let d;
+    try { d = typeof initialData === "string" ? JSON.parse(initialData) : initialData; } catch(e) { return; }
+    if (d.shelves) {
+      setShelves(d.shelves.map(s => ({
+        ...s, id: s.id || uid(), height: s.height || DEFAULT_SHELF_H,
+        products: (s.products || []).map(p => ({
+          ...p, _uid: p._uid || uid(), stacks: p.stacks || 1, facings: p.facings || 1,
+          gap: p.gap != null ? p.gap : 0, cropT: p.cropT || 0, cropB: p.cropB || 0,
+          cropL: p.cropL || 0, cropR: p.cropR || 0
+        }))
+      })));
+    }
+    if (d.title) setPlanogramTitle(d.title);
+    if (d.unit) setUnit(d.unit);
+    if (d.shelfWidthMM) setShelfWidthMM(d.shelfWidthMM);
+    if (d.shelfThickness) setShelfThickness(d.shelfThickness);
+  }, []);
+
+  // Expose getState via ref
+  React.useImperativeHandle(ref, () => ({
+    getState: () => ({
+      title: planogramTitle,
+      date: new Date().toISOString(),
+      unit,
+      shelfWidthMM,
+      shelfThickness,
+      shelves: shelves.map(s => ({
+        ...s,
+        products: s.products.map(({ _uid, ...rest }) => rest)
+      }))
+    })
+  }), [planogramTitle, unit, shelfWidthMM, shelfThickness, shelves]);
+
+  useEffect(() => {
+    if (!shelfAreaRef.current) return;
+    const ro = new ResizeObserver((entries) => { for (const e of entries) setShelfAreaH(e.contentRect.height); });
+    ro.observe(shelfAreaRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const totalShelfContentMM = shelves.reduce((sum, s) => sum + (s.height || DEFAULT_SHELF_H), 0) + shelves.length * shelfThickness;
+  const approxContainerW = shelfAreaRef.current ? shelfAreaRef.current.clientWidth - 32 : 800;
+  const basePxPerMM = approxContainerW / shelfWidthMM;
+  const baseContentPx = totalShelfContentMM * basePxPerMM;
+  const uiChromePx = shelves.length * 36 + 40;
+  const fitZoom = shelfAreaH > 0 && baseContentPx > 0 ? Math.max(10, Math.min(100, Math.round(((shelfAreaH - uiChromePx) / baseContentPx) * 100))) : 100;
+  const zoomPct = zoom === "fit" ? fitZoom : zoom;
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2000); };
+
+  const searchProducts = useCallback(
+    debounce(async (q) => {
+      if (!q || q.length < 2) { setResults([]); return; }
+      setLoading(true); setError(null);
+      try {
+        const res = await fetch("https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + encodeURIComponent(q) + "&search_simple=1&action=process&json=1&page_size=25&fields=code,product_name,brands,image_front_small_url,image_url");
+        const data = await res.json();
+        const cache = loadDimCache();
+        setResults((data.products || []).filter(p => p.product_name).map(p => {
+          const cached = cache[p.code];
+          return { id: p.code || uid(), name: p.product_name, brand: p.brands || "", image_url: p.image_front_small_url || p.image_url || "", width: cached ? cached.width : null, height: cached ? cached.height : null, depth: cached ? cached.depth : null, cropT: cached ? cached.cropT || 0 : 0, cropB: cached ? cached.cropB || 0 : 0, cropL: cached ? cached.cropL || 0 : 0, cropR: cached ? cached.cropR || 0 : 0, barcode: p.code, hasCachedDims: !!cached };
+        }));
+      } catch(ex) { setError("Search failed."); setResults([]); }
+      setLoading(false);
+    }, 400), []);
+
+  useEffect(() => { searchProducts(query); }, [query]);
+
+  const handleDrop = (si, product) => {
+    const cache = loadDimCache();
+    const cached = product.barcode ? cache[product.barcode] : null;
+    const p = { ...product, _uid: uid(), facings: 1, stacks: 1, gap: 0, width: product.width || (cached ? cached.width : null), height: product.height || (cached ? cached.height : null), depth: product.depth || (cached ? cached.depth : null), cropT: product.cropT || (cached ? cached.cropT || 0 : 0), cropB: product.cropB || (cached ? cached.cropB || 0 : 0), cropL: product.cropL || (cached ? cached.cropL || 0 : 0), cropR: product.cropR || (cached ? cached.cropR || 0 : 0) };
+    setShelves(prev => prev.map((s, i) => i === si ? { ...s, products: [...s.products, p] } : s));
+  };
+  const updateProducts = (si, products) => setShelves(p => p.map((s, i) => i === si ? { ...s, products } : s));
+  const addShelf = () => setShelves(p => [...p, { id: uid(), height: DEFAULT_SHELF_H, products: [] }]);
+  const removeShelf = (i) => { if (shelves.length <= 1) return; setShelves(p => p.filter((_, j) => j !== i)); };
+  const moveShelf = (i, d) => setShelves(p => { const a = [...p]; const t = i + d; if (t < 0 || t >= a.length) return a; [a[i], a[t]] = [a[t], a[i]]; return a; });
+  const resizeShelf = (i, h) => setShelves(p => p.map((s, j) => j === i ? { ...s, height: h } : s));
+  const clearAll = () => { setShelves(p => p.map(s => ({ ...s, products: [] }))); setSelected(new Set()); };
+
+  const handleSelect = (si, pi, _uid, e) => { setSelected(prev => { const n = new Set(e.shiftKey || e.ctrlKey || e.metaKey ? prev : []); if (n.has(_uid)) n.delete(_uid); else n.add(_uid); return n; }); };
+  const selectAll = () => { const a = new Set(); shelves.forEach(s => s.products.forEach(p => a.add(p._uid))); setSelected(a); };
+  const deselectAll = () => setSelected(new Set());
+
+  const copySelected = useCallback(() => { const items = []; shelves.forEach(s => s.products.forEach(p => { if (selected.has(p._uid)) items.push({ ...p }); })); if (!items.length) return; setClipboard(items); showToast("Copied " + items.length); }, [shelves, selected]);
+  const pasteToShelf = (si) => { if (!clipboard.length) return; setShelves(p => p.map((s, i) => i === si ? { ...s, products: [...s.products, ...clipboard.map(c => ({ ...c, _uid: uid() }))] } : s)); showToast("Pasted " + clipboard.length); };
+  const deleteSelected = useCallback(() => { if (!selected.size) return; setShelves(p => p.map(s => ({ ...s, products: s.products.filter(p => !selected.has(p._uid)) }))); showToast("Deleted " + selected.size); setSelected(new Set()); }, [selected]);
+  const resetDimsSelected = useCallback(() => {
+    if (!selected.size) return;
+    setShelves(p => p.map(s => ({ ...s, products: s.products.map(p => {
+      if (!selected.has(p._uid)) return p;
+      if (p.barcode) { const cache = loadDimCache(); delete cache[p.barcode]; saveDimCache(cache); }
+      return { ...p, width: null, height: null, depth: null, cropT: 0, cropB: 0, cropL: 0, cropR: 0 };
+    }) })));
+    showToast("Reset dims on " + selected.size);
+  }, [selected]);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") { e.preventDefault(); copySelected(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") { e.preventDefault(); selectAll(); }
+      if (e.key === "Delete" || e.key === "Backspace") { if (selected.size) { e.preventDefault(); deleteSelected(); } }
+      if (e.key === "Escape") deselectAll();
+    };
+    window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h);
+  }, [copySelected, deleteSelected, selected]);
+
+  useEffect(() => {
+    const el = shelfAreaRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom(z => { const cur = z === "fit" ? fitZoom : z; const delta = e.deltaY > 0 ? -10 : 10; return Math.max(10, Math.min(200, cur + delta)); });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [fitZoom]);
+
+  const handleEditDims = (si, pi) => setEditTarget({ shelfIdx: si, prodIdx: pi });
+  const saveDims = (dims) => {
+    const { shelfIdx, prodIdx } = editTarget;
+    setShelves(p => p.map((s, i) => { if (i !== shelfIdx) return s; const pr = [...s.products]; pr[prodIdx] = { ...pr[prodIdx], ...dims }; return { ...s, products: pr }; }));
+    setEditTarget(null);
+  };
+
+  const loadSaveList = async () => {
+    try { const res = await storage.list("plano:"); const entries = []; for (const key of res.keys) { try { const it = await storage.get(key); const d = JSON.parse(it.value); entries.push({ key, name: d.title || key, shelves: d.shelves ? d.shelves.length : 0, products: d.shelves ? d.shelves.reduce((s, sh) => s + sh.products.length, 0) : 0, date: d.date }); } catch(ex) {} } entries.sort((a, b) => new Date(b.date) - new Date(a.date)); setSaves(entries); } catch(ex) { setSaves([]); }
+  };
+  const savePlanogram = async (name) => {
+    const key = "plano:" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    try { await storage.set(key, JSON.stringify({ title: name, date: new Date().toISOString(), unit, shelfWidthMM, shelfThickness, shelves })); showToast("Saved: " + name); await loadSaveList(); } catch(ex) { showToast("Save failed"); }
+  };
+  const loadPlanogram = async (key) => {
+    try { const res = await storage.get(key); const d = JSON.parse(res.value); setShelves(d.shelves.map(s => ({ ...s, height: s.height || DEFAULT_SHELF_H, products: s.products.map(p => ({ ...p, _uid: p._uid || uid(), stacks: p.stacks || 1, facings: p.facings || 1, gap: p.gap != null ? p.gap : 0, cropT: p.cropT || 0, cropB: p.cropB || 0, cropL: p.cropL || 0, cropR: p.cropR || 0 })) }))); setPlanogramTitle(d.title || "Loaded"); if (d.unit) setUnit(d.unit); if (d.shelfWidthMM) setShelfWidthMM(d.shelfWidthMM); if (d.shelfThickness) setShelfThickness(d.shelfThickness); setSelected(new Set()); setModal(null); showToast("Loaded!"); } catch(ex) { showToast("Load failed"); }
+  };
+  const deleteSave = async (key) => { try { await storage.delete(key); await loadSaveList(); showToast("Deleted"); } catch(ex) {} };
+
+  const exportJSON = () => {
+    const data = { title: planogramTitle, date: new Date().toISOString(), unit, shelfWidthMM, shelfThickness, shelves: shelves.map((s, i) => ({ label: "Shelf " + (i + 1), height: s.height, products: s.products.map(({ _uid, ...r }) => r) })) };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = planogramTitle.replace(/\s+/g, "_") + ".json"; a.click(); URL.revokeObjectURL(url); showToast("Exported");
+  };
+  const importRef = useRef();
+  const importJSON = (e) => {
+    const file = e.target.files ? e.target.files[0] : null; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if (d.shelves) { setShelves(d.shelves.map(s => ({ id: s.id || uid(), height: s.height || DEFAULT_SHELF_H, products: (s.products || []).map(p => ({ ...p, _uid: uid(), stacks: p.stacks || 1, facings: p.facings || 1, gap: p.gap != null ? p.gap : 0, cropT: p.cropT || 0, cropB: p.cropB || 0, cropL: p.cropL || 0, cropR: p.cropR || 0 })) }))); setPlanogramTitle(d.title || "Imported"); if (d.unit) setUnit(d.unit); if (d.shelfWidthMM) setShelfWidthMM(d.shelfWidthMM); if (d.shelfThickness) setShelfThickness(d.shelfThickness); showToast("Imported!"); } } catch(ex) { showToast("Invalid file"); } };
+    reader.readAsText(file); e.target.value = "";
+  };
+
+  const totalProducts = shelves.reduce((s, sh) => s + sh.products.length, 0);
+  const tb = (bg) => ({ padding: "6px 10px", fontSize: 12, background: bg, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", whiteSpace: "nowrap" });
+
+  return (
+    <UnitCtx.Provider value={unit}>
+      <div style={{ display: "flex", flexDirection: "row", height: "100%", width: "100%", overflow: "hidden", background: "#f3f4f6", fontFamily: "system-ui, sans-serif" }}>
+        {toast && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 2060, background: "#1f2937", color: "#fff", fontSize: 14, padding: "8px 16px", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>{toast}</div>}
+        {editTarget && <DimModal product={shelves[editTarget.shelfIdx].products[editTarget.prodIdx]} onSave={saveDims} onCancel={() => setEditTarget(null)} />}
+        {(modal === "save" || modal === "load") && <SaveLoadModal mode={modal} saves={saves} onSave={(n) => { savePlanogram(n); setModal(null); }} onLoad={loadPlanogram} onDelete={deleteSave} onClose={() => setModal(null)} />}
+        {modal === "templates" && <TemplateManagerModal onClose={() => setModal(null)} />}
+
+        {!cleanView && (
+        <div style={{ width: 280, minWidth: 280, maxWidth: 280, display: "flex", flexDirection: "column", background: "#fff", borderRight: "1px solid #e5e7eb", height: "100%", overflow: "hidden" }}>
+          <div style={{ padding: 12, borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Product Search</h2>
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search Open Food Facts..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14, outline: "none" }} />
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{"Drag to shelves \u00b7 Cached dims auto-apply"}</p>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
+            {loading && <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af", fontSize: 14 }}>Searching...</div>}
+            {error && <div style={{ textAlign: "center", padding: "16px 0", color: "#f87171", fontSize: 14 }}>{error}</div>}
+            {!loading && !error && results.length === 0 && query.length >= 2 && <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af", fontSize: 14 }}>No results</div>}
+            {!loading && query.length < 2 && <div style={{ textAlign: "center", padding: "32px 0", color: "#d1d5db", fontSize: 14 }}>Type 2+ chars</div>}
+            {results.map(p => <ProductCard key={p.id} product={p} />)}
+          </div>
+          <div style={{ padding: 8, borderTop: "1px solid #f3f4f6", fontSize: 11, color: "#9ca3af", textAlign: "center", flexShrink: 0 }}>
+            <a href="https://openfoodfacts.org" target="_blank" rel="noopener" style={{ textDecoration: "underline", color: "inherit" }}>Open Food Facts</a> (ODbL)
+          </div>
+        </div>
+        )}
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100%", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "#fff", borderBottom: "1px solid #e5e7eb", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {!cleanView && editingTitle ? (
+                <input autoFocus value={planogramTitle} onChange={(e) => setPlanogramTitle(e.target.value)} onBlur={() => setEditingTitle(false)} onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)} style={{ fontSize: 18, fontWeight: 700, borderBottom: "2px solid #3b82f6", outline: "none", padding: "0 4px", background: "transparent", color: "#1f2937" }} />
+              ) : (
+                <h1 onClick={() => { if (!cleanView) setEditingTitle(true); }} style={{ fontSize: 18, fontWeight: 700, color: "#1f2937", cursor: cleanView ? "default" : "pointer", margin: 0 }}>{planogramTitle}</h1>
+              )}
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{shelves.length} shelves {" \u00b7 "} {totalProducts} products</span>
+            </div>
+            {!cleanView && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {selected.size > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginRight: 4, padding: "4px 8px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+                  <span style={{ fontSize: 12, color: "#2563eb", fontWeight: 500 }}>{selected.size} sel</span>
+                  <button onClick={copySelected} style={{ ...tb("#3b82f6"), padding: "3px 6px" }}>Copy</button>
+                  <button onClick={resetDimsSelected} style={{ ...tb("#f59e0b"), padding: "3px 6px" }}>Reset Dims</button>
+                  <button onClick={deleteSelected} style={{ ...tb("#ef4444"), padding: "3px 6px" }}>Del</button>
+                  <button onClick={deselectAll} style={{ background: "none", border: "none", fontSize: 12, color: "#6b7280", cursor: "pointer" }}>{" \u2715 "}</button>
+                </div>
+              )}
+              {clipboard.length > 0 && <span style={{ fontSize: 12, color: "#16a34a", padding: "4px 8px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>{clipboard.length} copied</span>}
+              <button onClick={addShelf} style={tb("#3b82f6")}>+ Shelf</button>
+              <button onClick={() => setModal("templates")} style={tb("#0891b2")}>Templates</button>
+              {!isEmbedded && <button onClick={() => { loadSaveList(); setModal("save"); }} style={tb("#10b981")}>Save</button>}
+              {!isEmbedded && <button onClick={() => { loadSaveList(); setModal("load"); }} style={tb("#f59e0b")}>Load</button>}
+              <button onClick={exportJSON} style={tb("#8b5cf6")}>Export</button>
+              <button onClick={() => importRef.current.click()} style={tb("#6b7280")}>Import</button>
+              <input ref={importRef} type="file" accept=".json" onChange={importJSON} style={{ display: "none" }} />
+              <button onClick={clearAll} style={{ ...tb("#e5e7eb"), color: "#4b5563" }}>Clear</button>
+            </div>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 16px", flexShrink: 0, background: "#fafafa", borderBottom: "1px solid #f0f0f0", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <UnitSelector value={unit} onChange={setUnit} />
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer" }}>
+                <input type="checkbox" checked={cleanView} onChange={(e) => setCleanView(e.target.checked)} />
+                Clean View
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280" }}>
+                Zoom:
+                <button onClick={() => setZoom(z => { const cur = z === "fit" ? fitZoom : z; return Math.max(10, cur - 10); })} style={{ background: "#e5e7eb", border: "none", borderRadius: 3, padding: "1px 5px", cursor: "pointer", fontSize: 11 }}>{" \u2212 "}</button>
+                <span style={{ minWidth: 30, textAlign: "center" }}>{zoomPct}%</span>
+                <button onClick={() => setZoom(z => { const cur = z === "fit" ? fitZoom : z; return Math.min(200, cur + 10); })} style={{ background: "#e5e7eb", border: "none", borderRadius: 3, padding: "1px 5px", cursor: "pointer", fontSize: 11 }}>+</button>
+                <button onClick={() => setZoom(100)} style={{ background: "#e5e7eb", border: "none", borderRadius: 3, padding: "1px 5px", cursor: "pointer", fontSize: 11 }}>100%</button>
+                <button onClick={() => setZoom("fit")} style={{ background: "#dbeafe", border: "1px solid #bfdbfe", borderRadius: 3, padding: "1px 6px", cursor: "pointer", fontSize: 11, color: "#2563eb" }}>Fit All</button>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280" }}>
+                Shelf W:
+                <input type="number" step="any" value={fromMM(shelfWidthMM, unit)} onChange={(e) => { const v = toMM(e.target.value, unit); if (v && v > 0) setShelfWidthMM(v); }} style={{ width: 52, border: "1px solid #d1d5db", borderRadius: 3, padding: "1px 4px", fontSize: 11, textAlign: "center" }} />
+                {UNITS[unit].label}
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280" }}>
+                Board:
+                <input type="number" step="any" value={fromMM(shelfThickness, unit)} onChange={(e) => { const v = toMM(e.target.value, unit); if (v != null && v >= 0) setShelfThickness(v); }} style={{ width: 42, border: "1px solid #d1d5db", borderRadius: 3, padding: "1px 4px", fontSize: 11, textAlign: "center" }} />
+                {UNITS[unit].label}
+              </label>
+              {!cleanView && <span style={{ fontSize: 10, color: "#b0b0b0" }}>Dbl-click=edit/crop</span>}
+            </div>
+          </div>
+          <div ref={shelfAreaRef} style={{ flex: 1, overflowY: "auto", overflow: "auto", padding: 16 }}>
+            <div style={{ margin: "0 auto", padding: "0 8px", maxWidth: zoomPct + "%" }}>
+              {shelves.map((shelf, idx) => (
+                <Shelf key={shelf.id} shelf={shelf} index={idx} total={shelves.length} onDrop={handleDrop} onUpdateProducts={updateProducts} onMoveUp={() => moveShelf(idx, -1)} onMoveDown={() => moveShelf(idx, 1)} onRemoveShelf={() => removeShelf(idx)} onResizeShelf={resizeShelf} selected={selected} onSelect={handleSelect} onEdit={handleEditDims} clipboard={clipboard} onPaste={pasteToShelf} cleanView={cleanView} shelfThickness={shelfThickness} shelfWidthMM={shelfWidthMM} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </UnitCtx.Provider>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  PLANOGRAM MODAL (wraps PlanogramBuilder)
+// ═══════════════════════════════════════════════════════════════
+function PlanogramModal({ initialData, onSave, onCancel }) {
+  const builderRef = useRef(null);
+  const handleSave = () => {
+    if (builderRef.current) {
+      const state = builderRef.current.getState();
+      onSave(JSON.stringify(state));
+    }
+  };
+  return (
+    <div className="plano-modal-overlay">
+      <div className="plano-modal-topbar">
+        <h2>Planogram Builder</h2>
+        <div className="plano-actions">
+          <button className="btn" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save & Close</button>
+        </div>
+      </div>
+      <div className="plano-modal-body">
+        <PlanogramBuilder ref={builderRef} initialData={initialData} isEmbedded={true} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DISPLAY FORM MODAL (Add/Edit)
+// ═══════════════════════════════════════════════════════════════
+function DisplayFormModal({ record, isEdit, mapB64, onSave, onClose, onBuildPlanogram }) {
+  const [location, setLocation] = useState(record ? record.location : LOCATION_FLAT[0].code);
+  const [otherLocation, setOtherLocation] = useState(record ? record.otherLocation || "" : "");
+  const [displayType, setDisplayType] = useState(record ? record.displayType : "Endcap");
+  const [product, setProduct] = useState(record ? record.product : "");
+  const [vendor, setVendor] = useState(record ? record.vendor : "");
+  const [directive, setDirective] = useState(record ? record.directive : "Store Discretion");
+  const [status, setStatus] = useState(record ? record.status : "scheduled");
+  const [setupDate, setSetupDate] = useState(record ? record.setupDate || "" : "");
+  const [expectedLife, setExpectedLife] = useState(record ? (record.permanent ? "" : (record.expectedLife || 14)) : 14);
+  const [permanent, setPermanent] = useState(record ? record.permanent || false : false);
+  const [notes, setNotes] = useState(record ? record.notes || "" : "");
+  const [tempMods, setTempMods] = useState([...(record ? record.modifications || [] : [])]);
+  const [modType, setModType] = useState("");
+  const [modProduct, setModProduct] = useState("");
+  const [mapZoomed, setMapZoomed] = useState(false);
+
+  const readForm = () => ({
+    location, otherLocation, displayType, product: product.trim(), vendor: vendor.trim(),
+    directive, status, setupDate, expectedLife: permanent ? 0 : (parseInt(expectedLife) || 14),
+    permanent, notes: notes.trim(), modifications: tempMods,
+    planogramData: record ? record.planogramData || null : null
+  });
+
+  const handleSave = () => {
+    const data = readForm();
+    if (!data.product) return;
+    if (data.location === "__other__" && !data.otherLocation) return;
+    onSave(data);
+  };
+
+  const handleBuildPlanogram = () => {
+    const data = readForm();
+    if (!data.product) return;
+    if (data.location === "__other__" && !data.otherLocation) return;
+    onBuildPlanogram(data);
+  };
+
+  const addMod = () => {
+    if (!modType) return;
+    const det = modType === "Additional Product Incorporated" ? modProduct.trim() : "";
+    if (modType === "Additional Product Incorporated" && !det) return;
+    setTempMods(prev => [...prev, { type: modType, date: new Date().toISOString(), detail: det }]);
+    setModType(""); setModProduct("");
+  };
+
+  const removeMod = (i) => setTempMods(prev => prev.filter((_, j) => j !== i));
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-layout" onClick={e => e.stopPropagation()}>
+        <div className={"modal" + (!mapB64 ? " no-map" : "")}>
+          <div className="modal-header">
+            <h2>{isEdit ? "Edit Display" : "New Display"}</h2>
+            <button className="modal-close" onClick={onClose}>\u00d7</button>
+          </div>
+          <div className="modal-body">
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Location *</label>
+                <select value={location} onChange={e => setLocation(e.target.value)}>
+                  {buildLocOptions().map(g => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.codes.map(c => <option key={c} value={c}>{c}</option>)}
+                    </optgroup>
+                  ))}
+                  <optgroup label="Other"><option value="__other__">Other (custom)...</option></optgroup>
+                </select>
+              </div>
+              {location === "__other__" && (
+                <div className="form-group">
+                  <label>Custom Location</label>
+                  <input value={otherLocation} onChange={e => setOtherLocation(e.target.value)} placeholder="Describe the location" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>Display Type *</label>
+                <select value={displayType} onChange={e => setDisplayType(e.target.value)}>
+                  {DISPLAY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="form-group full">
+                <label>Product Name *</label>
+                <input value={product} onChange={e => setProduct(e.target.value)} placeholder="Product description" />
+              </div>
+              <div className="form-group">
+                <label>Vendor</label>
+                <input value={vendor} onChange={e => setVendor(e.target.value)} placeholder="Vendor / distributor" />
+              </div>
+              <div className="form-group">
+                <label>Corporate Directive</label>
+                <select value={directive} onChange={e => setDirective(e.target.value)}>
+                  {DIRECTIVE_TAGS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select value={status} onChange={e => setStatus(e.target.value)}>
+                  {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Setup Date</label>
+                <input type="date" value={setupDate} onChange={e => setSetupDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Expected Life (days)</label>
+                <input type="number" value={expectedLife} onChange={e => setExpectedLife(e.target.value)} min="1" disabled={permanent} />
+                <div className="checkbox-row">
+                  <input type="checkbox" id="fPermanent" checked={permanent} onChange={e => { setPermanent(e.target.checked); if (e.target.checked) setExpectedLife(""); else setExpectedLife(14); }} />
+                  <label htmlFor="fPermanent">Permanent display</label>
+                </div>
+              </div>
+              {isEdit && (
+                <div className="form-group full">
+                  <label>Modifications</label>
+                  <div className="mod-form-section">
+                    <div className="mod-form-row">
+                      <div className="form-group" style={{gap:5}}>
+                        <select value={modType} onChange={e => setModType(e.target.value)}>
+                          <option value="">Add a modification...</option>
+                          <option value="Moved">Moved</option>
+                          <option value="Combined">Combined</option>
+                          <option value="Downsized to Metro">Downsized to Metro</option>
+                          <option value="Additional Product Incorporated">Additional Product Incorporated</option>
+                        </select>
+                      </div>
+                      <button className="btn btn-sm btn-primary" onClick={addMod} style={{height:35}}>+ Add</button>
+                    </div>
+                    {modType === "Additional Product Incorporated" && (
+                      <div className="form-group" style={{marginTop:8,gap:5}}>
+                        <input value={modProduct} onChange={e => setModProduct(e.target.value)} placeholder="What product was added?" />
+                      </div>
+                    )}
+                    {tempMods.length > 0 && (
+                      <div className="mod-history">
+                        {tempMods.map((m, i) => (
+                          <div key={i} className="mod-history-item">
+                            <div>
+                              <span className="mod-badge">{m.type}</span>
+                              {m.detail && <span style={{color:"var(--text2)",fontSize:11,marginLeft:4}}>{" \u2014 "}{m.detail}</span>}
+                              <span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--text3)",marginLeft:6}}>{fmtDateTime(m.date)}</span>
+                            </div>
+                            <button style={{background:"none",border:"none",color:"var(--text3)",cursor:"pointer",fontSize:14,padding:"0 4px"}} onClick={() => removeMod(i)}>\u2715</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="form-group full">
+                <label>Notes</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Vendor rep visits, special instructions, etc." />
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button className="btn" onClick={onClose}>Cancel</button>
+            {isEdit && <button className="btn btn-transition" onClick={handleBuildPlanogram} title="Open planogram builder for this display">{"\ud83d\udcd0"} Build Planogram</button>}
+            <button className="btn btn-primary" onClick={handleSave}>{isEdit ? "Save Changes" : "Add Display"}</button>
+          </div>
+        </div>
+        {mapB64 && (
+          <div className="modal-map">
+            <div className="modal-map-header">{"\ud83d\udccd"} Store Map Reference</div>
+            <div className={"modal-map-body" + (mapZoomed ? " zoomed" : "")} onClick={() => setMapZoomed(!mapZoomed)}>
+              <img src={mapB64} alt="Store floor plan" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TRANSITION WIZARD
+// ═══════════════════════════════════════════════════════════════
+function TransitionWizard({ record, onExecute, onClose }) {
+  const loc = getLocDisp(record);
+  const [newLocation, setNewLocation] = useState(LOCATION_FLAT[0].code);
+  const [newOtherLocation, setNewOtherLocation] = useState("");
+  const [newDisplayType, setNewDisplayType] = useState("Endcap");
+  const [newSetupDate, setNewSetupDate] = useState(todayStr());
+  const [newLife, setNewLife] = useState(14);
+  const [wantsReplace, setWantsReplace] = useState(false);
+  const [replaceProduct, setReplaceProduct] = useState("");
+  const [replaceVendor, setReplaceVendor] = useState("");
+  const [replaceDisplayType, setReplaceDisplayType] = useState(record.displayType);
+  const [replaceDirective, setReplaceDirective] = useState("Store Discretion");
+  const [replaceSetupDate, setReplaceSetupDate] = useState(todayStr());
+  const [replaceLife, setReplaceLife] = useState(14);
+
+  const handleExecute = () => {
+    if (newLocation === "__other__" && !newOtherLocation.trim()) return;
+    if (wantsReplace && !replaceProduct.trim()) return;
+    onExecute({
+      newLocation, newOtherLocation: newOtherLocation.trim(), newDisplayType, newSetupDate,
+      newLife: parseInt(newLife) || 14,
+      wantsReplace, replaceProduct: replaceProduct.trim(), replaceVendor: replaceVendor.trim(),
+      replaceDisplayType, replaceDirective, replaceSetupDate, replaceLife: parseInt(replaceLife) || 14
+    });
+  };
+
+  return (
+    <div className="transition-overlay" onClick={onClose}>
+      <div className="transition-wizard" onClick={e => e.stopPropagation()}>
+        <div className="tw-header">
+          <h2><span className="tw-icon">{"\u26a1"}</span> Transition Display</h2>
+          <p>Move "{record.product}" from {loc} to a new location. The original will be archived.</p>
+        </div>
+        <div className="tw-body">
+          <div className="tw-section">
+            <h3 className="expire-title">{"\u2460"} Current Display {"\u2192"} Archived</h3>
+            <div className="tw-summary">
+              <strong>{record.product}</strong> at <strong>{loc}</strong> ({record.displayType})<br/>
+              Vendor: {record.vendor || "\u2014"} {"\u00b7"} Directive: {record.directive}
+            </div>
+          </div>
+          <div className="tw-section">
+            <h3 className="new-title">{"\u2461"} New Display {"\u2014"} Same Product {"\u2192"} Active</h3>
+            <div className="tw-grid">
+              <div className="form-group">
+                <label>New Location *</label>
+                <select value={newLocation} onChange={e => setNewLocation(e.target.value)}>
+                  {buildLocOptions().map(g => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.codes.map(c => <option key={c} value={c}>{c}</option>)}
+                    </optgroup>
+                  ))}
+                  <optgroup label="Other"><option value="__other__">Other (custom)...</option></optgroup>
+                </select>
+              </div>
+              {newLocation === "__other__" && (
+                <div className="form-group">
+                  <label>Custom Location</label>
+                  <input value={newOtherLocation} onChange={e => setNewOtherLocation(e.target.value)} placeholder="Describe" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>New Display Type *</label>
+                <select value={newDisplayType} onChange={e => setNewDisplayType(e.target.value)}>
+                  {DISPLAY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Setup Date</label>
+                <input type="date" value={newSetupDate} onChange={e => setNewSetupDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Expected Life (days)</label>
+                <input type="number" value={newLife} onChange={e => setNewLife(e.target.value)} min="1" />
+              </div>
+            </div>
+          </div>
+          <div className="tw-section">
+            <h3 className="replace-title">{"\u2462"} Replacement {"\u2014"} What Goes In The Old Spot (Optional)</h3>
+            <div className="checkbox-row" style={{paddingTop:0,marginBottom:10}}>
+              <input type="checkbox" checked={wantsReplace} onChange={e => setWantsReplace(e.target.checked)} id="twReplace" />
+              <label htmlFor="twReplace">Enter replacement display for the old location</label>
+            </div>
+            {wantsReplace && (
+              <div className="tw-grid">
+                <div className="form-group full">
+                  <label>Replacement Product *</label>
+                  <input value={replaceProduct} onChange={e => setReplaceProduct(e.target.value)} placeholder="New product name" />
+                </div>
+                <div className="form-group">
+                  <label>Vendor</label>
+                  <input value={replaceVendor} onChange={e => setReplaceVendor(e.target.value)} placeholder="Vendor (optional)" />
+                </div>
+                <div className="form-group">
+                  <label>Display Type</label>
+                  <select value={replaceDisplayType} onChange={e => setReplaceDisplayType(e.target.value)}>
+                    {DISPLAY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Directive</label>
+                  <select value={replaceDirective} onChange={e => setReplaceDirective(e.target.value)}>
+                    {DIRECTIVE_TAGS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Setup Date</label>
+                  <input type="date" value={replaceSetupDate} onChange={e => setReplaceSetupDate(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Expected Life (days)</label>
+                  <input type="number" value={replaceLife} onChange={e => setReplaceLife(e.target.value)} min="1" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="tw-footer">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleExecute}>{"\u26a1"} Execute Transition</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DETAIL PANEL (slide-out)
+// ═══════════════════════════════════════════════════════════════
+function DetailPanel({ record, onEdit, onTransition, onDelete, onViewPlanogram, onClose }) {
+  const st = getStatus(record.status);
+  const loc = getLocDisp(record);
+  const lg = getLocGroup(record.location);
+  const ms = record.modifications || [];
+  const dr = record.setupDate && record.expectedLife && !record.permanent ? daysRem(record.setupDate, record.expectedLife) : null;
+
+  return (
+    <div className="detail-overlay" onClick={onClose}>
+      <div className="detail-panel" onClick={e => e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            <h2>{loc}</h2>
+            <div className="detail-sub">{record.displayType}{lg ? " \u00b7 " + lg : ""}</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>\u00d7</button>
+        </div>
+        <div className="detail-section">
+          <h3>Product</h3>
+          <div className="detail-row"><span className="dlabel">Name</span><span className="dvalue">{record.product}</span></div>
+          <div className="detail-row"><span className="dlabel">Vendor</span><span className="dvalue">{record.vendor || "\u2014"}</span></div>
+        </div>
+        <div className="detail-section">
+          <h3>Timeline</h3>
+          <div className="detail-row"><span className="dlabel">Setup Date</span><span className="dvalue">{fmtDate(record.setupDate)}</span></div>
+          <div className="detail-row"><span className="dlabel">Expected Life</span><span className="dvalue mono">{record.permanent ? "Permanent" : (record.expectedLife ? record.expectedLife + " days" : "\u2014")}</span></div>
+          {dr !== null && (
+            <div className="detail-row"><span className="dlabel">Days Remaining</span><span className="dvalue mono" style={{color: dr <= 3 ? "var(--red)" : "var(--text)"}}>{dr > 0 ? dr + " days" : "Past due"}</span></div>
+          )}
+        </div>
+        <div className="detail-section">
+          <h3>Classification</h3>
+          <div className="detail-row"><span className="dlabel">Directive</span><span className={"directive-tag " + dirClass(record.directive)}>{record.directive}</span></div>
+          <div className="detail-row"><span className="dlabel">Status</span><span className="badge" style={{background: st.color}}>{st.label}</span></div>
+        </div>
+        {ms.length > 0 && (
+          <div className="detail-section">
+            <h3>Modification History</h3>
+            <ul className="mod-log">
+              {ms.map((m, i) => (
+                <li key={i}>
+                  <span className="mod-type">{m.type}</span>
+                  <span className="mod-time">{fmtDateTime(m.date)}</span>
+                  {m.detail && <div className="mod-detail">{m.detail}</div>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {record.notes && (
+          <div className="detail-section">
+            <h3>Notes</h3>
+            <p style={{fontSize:13,color:"var(--text2)",lineHeight:1.5}}>{record.notes}</p>
+          </div>
+        )}
+        <div style={{display:"flex",gap:8,marginTop:24,flexWrap:"wrap"}}>
+          <button className="btn" onClick={() => onEdit(record.id)}>{"\u270e"} Edit</button>
+          <button className="btn btn-transition" onClick={() => onTransition(record.id)}>{"\u26a1"} Transition</button>
+          {record.planogramData && <button className="btn btn-print" onClick={() => onViewPlanogram(record.id)}>{"\ud83d\udcd0"} View Planogram</button>}
+          <button className="btn btn-danger" onClick={() => onDelete(record.id)}>{"\u2715"} Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAP MODAL
+// ═══════════════════════════════════════════════════════════════
+function MapModal({ mapB64, onUpload, onClose }) {
+  const fileRef = useRef(null);
+  const handleFile = (e) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const data = ev.target.result;
+      try {
+        localStorage.setItem("store-map-b64", data);
+        onUpload(data);
+      } catch (err) {
+        alert("Image is too large to save. Please upload a smaller image (under ~3MB).");
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="map-overlay" onClick={onClose}>
+      <div className="map-viewer" onClick={e => e.stopPropagation()}>
+        <div className="map-viewer-header">
+          <h2>{"\ud83d\uddfa"} Store Floor Plan</h2>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <button className="btn btn-sm" onClick={() => fileRef.current.click()}>Upload Map</button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{display:"none"}} />
+            <button className="modal-close" onClick={onClose}>\u00d7</button>
+          </div>
+        </div>
+        <div className="map-viewer-body">
+          {mapB64 ? (
+            <img src={mapB64} alt="Store floor plan" />
+          ) : (
+            <div style={{textAlign:"center",padding:"60px 20px",color:"var(--text3)"}}>
+              <p style={{fontSize:14,marginBottom:12}}>No map uploaded yet.</p>
+              <button className="btn btn-primary" onClick={() => fileRef.current.click()}>Upload Store Map Image</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  APP (root component)
+// ═══════════════════════════════════════════════════════════════
+//  PRINT SHEET (declarative, React-rendered)
+// ═══════════════════════════════════════════════════════════════
+const noop = () => {};
+function PrintSheet({ selectedRecords, includePlanoInPrint }) {
+  if (!selectedRecords.length) return null;
+  return (
+    <div className="print-sheet">
+      <div className="ps-header">
+        <h1>Display Location Reference</h1>
+        <p>Printed {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} {"\u00b7"} {selectedRecords.length} display{selectedRecords.length > 1 ? "s" : ""}</p>
+      </div>
+      {selectedRecords.map(r => {
+        const loc = getLocDisp(r);
+        const lg = getLocGroup(r.location);
+        const plano = includePlanoInPrint ? parsePlanogramData(r.planogramData) : null;
+        return (
+          <div key={r.id} className="ps-card">
+            <div className="ps-loc">{loc}</div>
+            <div className="ps-type">{r.displayType}{lg ? " \u00b7 " + lg : ""}</div>
+            <div className="ps-product">{r.product}</div>
+            {r.notes && (
+              <React.Fragment>
+                <div className="ps-notes-label">Notes</div>
+                <div className="ps-notes">{r.notes}</div>
+              </React.Fragment>
+            )}
+            <div className="ps-meta">
+              <span>{r.directive}</span>
+              {r.permanent ? <span>Permanent</span> : r.setupDate ? <span>Setup: {fmtDateShort(r.setupDate)}</span> : null}
+              {!r.permanent && r.expectedLife ? <span>{r.expectedLife}d life</span> : null}
+            </div>
+            {plano && plano.shelves && plano.shelves.length > 0 && (
+              <div className="ps-plano">
+                <h4>Planogram: {plano.title || "Untitled"}</h4>
+                <UnitCtx.Provider value={plano.unit || "inches"}>
+                  {plano.shelves.map((shelf, idx) => (
+                    <Shelf
+                      key={shelf.id || idx}
+                      shelf={{...shelf, products: (shelf.products || []).map(p => ({...p, _uid: p._uid || uid()}))}}
+                      index={idx}
+                      total={plano.shelves.length}
+                      onDrop={noop} onUpdateProducts={noop} onMoveUp={noop} onMoveDown={noop}
+                      onRemoveShelf={noop} onResizeShelf={noop} onSelect={noop} onEdit={noop} onPaste={noop}
+                      selected={new Set()} clipboard={[]}
+                      cleanView={true}
+                      shelfThickness={plano.shelfThickness || Math.round(1.5 * ONE_INCH_MM)}
+                      shelfWidthMM={plano.shelfWidthMM || Math.round(48 * 25.4)}
+                    />
+                  ))}
+                </UnitCtx.Provider>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GITHUB SETTINGS MODAL
+// ═══════════════════════════════════════════════════════════════
+function SettingsModal({ onClose, onSaved }) {
+  const existing = GitHubSync.getConfig() || {};
+  const [token, setToken] = useState(existing.token || "");
+  const [owner, setOwner] = useState(existing.owner || "");
+  const [repo, setRepo] = useState(existing.repo || "");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  const handleTest = async () => {
+    setTesting(true); setTestResult(null);
+    GitHubSync.saveConfig({ token: token.trim(), owner: owner.trim(), repo: repo.trim() });
+    try {
+      await GitHubSync.testConnection();
+      setTestResult({ ok: true, msg: "Connected successfully!" });
+    } catch (err) {
+      setTestResult({ ok: false, msg: err.message });
+    }
+    setTesting(false);
+  };
+
+  const handleSave = () => {
+    GitHubSync.saveConfig({ token: token.trim(), owner: owner.trim(), repo: repo.trim() });
+    onSaved();
+    onClose();
+  };
+
+  const handleDisconnect = () => {
+    GitHubSync.clearConfig();
+    setToken(""); setOwner(""); setRepo("");
+    setTestResult(null);
+    onSaved();
+  };
+
+  const canSave = token.trim() && owner.trim() && repo.trim();
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,width:460,maxWidth:"90vw",maxHeight:"90vh",overflow:"auto",animation:"slideUp .2s ease"}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-header"><h2>GitHub Sync Settings</h2><button className="modal-close" onClick={onClose}>{"\u2715"}</button></div>
+        <div className="modal-body">
+          <p style={{fontSize:12,color:"var(--text2)",marginBottom:16,lineHeight:1.5}}>
+            Connect to a GitHub repository to share display data across your team. Each team member needs their own Personal Access Token (PAT) with <strong>repo</strong> scope.
+          </p>
+          <div style={{marginBottom:12,padding:10,background:"var(--bg)",border:"1px solid var(--border)",borderRadius:6}}>
+            <details style={{fontSize:12,color:"var(--text2)"}}>
+              <summary style={{cursor:"pointer",fontWeight:600,color:"var(--text)",marginBottom:8}}>How to create a GitHub PAT</summary>
+              <ol style={{paddingLeft:16,lineHeight:1.8}}>
+                <li>Go to github.com {"\u2192"} Settings {"\u2192"} Developer settings</li>
+                <li>Click "Personal access tokens" {"\u2192"} "Tokens (classic)"</li>
+                <li>Click "Generate new token (classic)"</li>
+                <li>Name it "Display Tracker", select the <strong>repo</strong> scope</li>
+                <li>Click "Generate token" and copy it</li>
+              </ol>
+            </details>
+          </div>
+          <div className="form-grid" style={{gridTemplateColumns:"1fr"}}>
+            <div className="form-group">
+              <label>GitHub Personal Access Token</label>
+              <input type="password" value={token} onChange={e=>setToken(e.target.value)} placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autoComplete="off" />
+            </div>
+            <div className="form-group" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div className="form-group">
+                <label>Repository Owner</label>
+                <input value={owner} onChange={e=>setOwner(e.target.value)} placeholder="username or org" />
+              </div>
+              <div className="form-group">
+                <label>Repository Name</label>
+                <input value={repo} onChange={e=>setRepo(e.target.value)} placeholder="display-tracker" />
+              </div>
+            </div>
+          </div>
+          {testResult && (
+            <div style={{marginTop:12,padding:10,borderRadius:6,fontSize:12,fontWeight:500,background:testResult.ok?"rgba(52,199,89,.1)":"rgba(255,59,48,.1)",color:testResult.ok?"var(--green)":"var(--red)",border:"1px solid "+(testResult.ok?"rgba(52,199,89,.3)":"rgba(255,59,48,.3)")}}>
+              {testResult.ok ? "\u2713 " : "\u2717 "}{testResult.msg}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          {existing.token && <button className="btn btn-danger btn-sm" onClick={handleDisconnect} style={{marginRight:"auto"}}>Disconnect</button>}
+          <button className="btn" onClick={handleTest} disabled={!canSave || testing}>{testing ? "Testing..." : "Test Connection"}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!canSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SYNC STATUS INDICATOR
+// ═══════════════════════════════════════════════════════════════
+function SyncIndicator({ syncState, onRefresh, onOpenSettings }) {
+  const { status, lastSync } = syncState;
+  const dotColors = { idle: "var(--text3)", syncing: "var(--orange)", synced: "var(--green)", error: "var(--red)", offline: "var(--text3)" };
+  const labels = { idle: "Not connected", syncing: "Syncing...", synced: "Synced", error: "Sync error", offline: "Offline" };
+  const isConfigured = GitHubSync.isConfigured();
+
+  const timeAgo = lastSync ? (() => {
+    const s = Math.floor((new Date() - lastSync) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + "m ago";
+    return Math.floor(s / 3600) + "h ago";
+  })() : null;
+
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"var(--text3)"}}>
+      {isConfigured ? (
+        <React.Fragment>
+          <span style={{width:7,height:7,borderRadius:"50%",background:dotColors[status]||"var(--text3)",display:"inline-block",animation:status==="syncing"?"pulse 1s infinite":""}} />
+          <span style={{cursor:"default"}} title={timeAgo ? "Last synced: " + timeAgo : ""}>{labels[status] || status}{timeAgo && status === "synced" ? " \u00b7 " + timeAgo : ""}</span>
+          <button onClick={onRefresh} className="btn btn-sm" style={{padding:"2px 6px",fontSize:10,borderColor:"transparent"}} title="Refresh from GitHub">{"\u21bb"}</button>
+        </React.Fragment>
+      ) : (
+        <button onClick={onOpenSettings} className="btn btn-sm" style={{fontSize:10,padding:"3px 8px"}}>Connect GitHub</button>
+      )}
+      <button onClick={onOpenSettings} className="btn btn-sm" style={{padding:"2px 6px",fontSize:10,borderColor:"transparent"}} title="Sync Settings">{"\u2699"}</button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+function App() {
+  const [initialData] = useState(() => loadStoredData());
+  const [records, setRecords] = useState(initialData.records);
+  const [nextId, setNextId] = useState(initialData.nextId);
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortCol, setSortCol] = useState(null);
+  const [sortAsc, setSortAsc] = useState(true);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [formModal, setFormModal] = useState(null); // null | "add" | record object
+  const [transitionSourceId, setTransitionSourceId] = useState(null);
+  const [detailId, setDetailId] = useState(null);
+  const [showMap, setShowMap] = useState(false);
+  const [planogramEntryId, setPlanogramEntryId] = useState(null);
+  const [mapB64, setMapB64] = useState(() => localStorage.getItem("store-map-b64") || "");
+  const [includePlanoInPrint, setIncludePlanoInPrint] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [syncState, setSyncState] = useState({ status: GitHubSync.isConfigured() ? "idle" : "idle", lastSync: null });
+
+  // Subscribe to sync status changes
+  useEffect(() => {
+    return GitHubSync.onStatusChange((s) => setSyncState({ ...s }));
+  }, []);
+
+  // Load from GitHub on mount (if configured)
+  useEffect(() => {
+    if (!GitHubSync.isConfigured()) return;
+    GitHubSync.load().then((data) => {
+      if (data && data.records) {
+        setRecords(data.records.map(r => ({ ...r, planogramData: r.planogramData || null })));
+        if (data.nextId) setNextId(data.nextId);
+        // Hydrate templates and dim cache into localStorage for component access
+        if (data.templates) localStorage.setItem("plano-dim-templates", JSON.stringify(data.templates));
+        if (data.dimCache) localStorage.setItem("plano-dim-cache", JSON.stringify(data.dimCache));
+        if (data.planograms) Object.entries(data.planograms).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+      }
+    });
+  }, []);
+
+  const handleRefreshFromGitHub = useCallback(async () => {
+    const data = await GitHubSync.load();
+    if (data && data.records) {
+      setRecords(data.records.map(r => ({ ...r, planogramData: r.planogramData || null })));
+      if (data.nextId) setNextId(data.nextId);
+      if (data.templates) localStorage.setItem("plano-dim-templates", JSON.stringify(data.templates));
+      if (data.dimCache) localStorage.setItem("plano-dim-cache", JSON.stringify(data.dimCache));
+      if (data.planograms) Object.entries(data.planograms).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+    }
+  }, []);
+
+  const handleSettingsSaved = useCallback(() => {
+    if (GitHubSync.isConfigured()) handleRefreshFromGitHub();
+  }, [handleRefreshFromGitHub]);
+
+  // Auto-save on every records/nextId change
+  useEffect(() => {
+    persistData(records, nextId);
+  }, [records, nextId]);
+
+  // Keyboard
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key === "Escape") {
+        if (planogramEntryId) return; // planogram handles its own escape
+        if (formModal) { setFormModal(null); return; }
+        if (transitionSourceId) { setTransitionSourceId(null); return; }
+        if (detailId) { setDetailId(null); return; }
+        if (showMap) { setShowMap(false); return; }
+      }
+    };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [formModal, transitionSourceId, detailId, showMap, planogramEntryId]);
+
+  // ── Handlers ──
+  const handleSortBy = (c) => {
+    if (sortCol === c) setSortAsc(!sortAsc);
+    else { setSortCol(c); setSortAsc(true); }
+  };
+
+  const toggleSelect = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const visible = getFiltered();
+    const allSelected = visible.every(r => selectedIds.has(r.id));
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (allSelected) visible.forEach(r => n.delete(r.id));
+      else visible.forEach(r => n.add(r.id));
+      return n;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const setFilter = (v) => setStatusFilter(prev => prev === v ? null : v);
+
+  const getFiltered = () => {
+    const q = searchQuery.toLowerCase();
+    let f = records.filter(r => {
+      if (!statusFilter && r.status === "archived") return false;
+      if (statusFilter && r.status !== statusFilter) return false;
+      if (q) return [getLocDisp(r), r.displayType, r.product, r.vendor, r.directive].some(x => x.toLowerCase().includes(q));
+      return true;
+    });
+    return getSorted(f, sortCol, sortAsc);
+  };
+
+  const handleSaveRecord = (formData) => {
+    if (formModal && formModal !== "add" && formModal.id != null) {
+      // Edit mode
+      setRecords(prev => prev.map(r => r.id === formModal.id ? { ...formData, id: formModal.id } : r));
+    } else {
+      // Add mode
+      const newRec = { ...formData, id: nextId, modifications: [] };
+      setRecords(prev => [...prev, newRec]);
+      setNextId(prev => prev + 1);
+    }
+    setFormModal(null);
+  };
+
+  const handleBuildPlanogram = (formData) => {
+    let targetId;
+    if (formModal && formModal !== "add" && formModal.id != null) {
+      targetId = formModal.id;
+      setRecords(prev => prev.map(r => r.id === targetId ? { ...formData, id: targetId } : r));
+    } else {
+      targetId = nextId;
+      const newRec = { ...formData, id: targetId, modifications: [] };
+      setRecords(prev => [...prev, newRec]);
+      setNextId(prev => prev + 1);
+    }
+    setFormModal(null);
+    setPlanogramEntryId(targetId);
+  };
+
+  const handlePlanogramSave = (planogramDataStr) => {
+    setRecords(prev => prev.map(r => r.id === planogramEntryId ? { ...r, planogramData: planogramDataStr } : r));
+    setPlanogramEntryId(null);
+  };
+
+  const handleDeleteRecord = (id) => {
+    setRecords(prev => prev.filter(r => r.id !== id));
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    if (detailId === id) setDetailId(null);
+  };
+
+  const handleTransition = (data) => {
+    const src = records.find(r => r.id === transitionSourceId);
+    if (!src) return;
+    const newLocLabel = data.newLocation === "__other__" ? data.newOtherLocation : data.newLocation;
+
+    // 1. Archive original
+    const archivedSrc = {
+      ...src, status: "archived",
+      modifications: [...(src.modifications || []), { type: "Moved", date: new Date().toISOString(), detail: "Transitioned to " + newLocLabel }]
+    };
+
+    // 2. New display
+    const newDisplay = {
+      id: nextId, location: data.newLocation, otherLocation: data.newOtherLocation,
+      displayType: data.newDisplayType, product: src.product, vendor: src.vendor,
+      directive: src.directive, status: "active", setupDate: data.newSetupDate,
+      expectedLife: data.newLife, permanent: false, notes: src.notes, planogramData: null,
+      modifications: [{ type: "Transitioned from " + getLocDisp(src), date: new Date().toISOString(), detail: "" }]
+    };
+
+    let newRecords = records.map(r => r.id === transitionSourceId ? archivedSrc : r);
+    newRecords.push(newDisplay);
+    let nid = nextId + 1;
+
+    // 3. Optional replacement
+    if (data.wantsReplace) {
+      newRecords.push({
+        id: nid, location: src.location, otherLocation: src.otherLocation,
+        displayType: data.replaceDisplayType, product: data.replaceProduct,
+        vendor: data.replaceVendor, directive: data.replaceDirective,
+        status: "active", setupDate: data.replaceSetupDate,
+        expectedLife: data.replaceLife, permanent: false, notes: "", planogramData: null,
+        modifications: [{ type: "Replaced " + src.product, date: new Date().toISOString(), detail: "" }]
+      });
+      nid++;
+    }
+
+    setRecords(newRecords);
+    setNextId(nid);
+    setTransitionSourceId(null);
+  };
+
+  const printSelected = () => {
+    if (!selectedIds.size) return;
+    window.print();
+  };
+
+  // ── Render ──
+  const filtered = getFiltered();
+  const counts = {};
+  STATUS_OPTIONS.forEach(s => counts[s.value] = 0);
+  records.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+  const visibleCount = records.filter(r => r.status !== "archived").length;
+  const activeCount = records.filter(r => r.status === "active").length;
+  const permCount = records.filter(r => r.permanent && r.status !== "archived").length;
+  const archCount = counts.archived || 0;
+
+  const transitionRecord = transitionSourceId ? records.find(r => r.id === transitionSourceId) : null;
+  const detailRecord = detailId ? records.find(r => r.id === detailId) : null;
+  const planogramRecord = planogramEntryId ? records.find(r => r.id === planogramEntryId) : null;
+
+  const anyPlanoInSelection = [...selectedIds].some(id => { const r = records.find(x => x.id === id); return r && r.planogramData; });
+
+  return (
+    <React.Fragment>
+      <div className="app">
+        {/* Header */}
+        <div className="header">
+          <div className="header-left">
+            <h1>Display Location Tracker</h1>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginTop:4}}>
+              <p style={{margin:0}}>{visibleCount} active displays {"\u00b7"} {activeCount} active {"\u00b7"} {permCount} permanent{archCount ? " \u00b7 " + archCount + " archived" : ""}</p>
+              <SyncIndicator syncState={syncState} onRefresh={handleRefreshFromGitHub} onOpenSettings={() => setShowSettings(true)} />
+            </div>
+          </div>
+          <div className="header-actions">
+            <button className="btn" onClick={() => setShowMap(true)}>{"\ud83d\uddfa"} Map</button>
+            <button className="btn" onClick={() => handleExportCSV(records)}>{"\u2193"} CSV</button>
+            {selectedIds.size > 0 && (
+              <React.Fragment>
+                {anyPlanoInSelection && (
+                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--text2)",cursor:"pointer"}}>
+                    <input type="checkbox" checked={includePlanoInPrint} onChange={e => setIncludePlanoInPrint(e.target.checked)} style={{accentColor:"var(--green)"}} />
+                    Incl. Planogram
+                  </label>
+                )}
+                <button className="btn btn-print" onClick={printSelected}>{"\u2399"} Print Selected ({selectedIds.size})</button>
+                <button className="btn btn-sm" onClick={clearSelection} style={{fontSize:11}}>Clear</button>
+              </React.Fragment>
+            )}
+            <button className="btn btn-primary" onClick={() => setFormModal("add")}>+ New Display</button>
+          </div>
+        </div>
+
+        {/* Status Bar */}
+        <div className="status-bar">
+          <div className={"status-pill" + (!statusFilter ? " selected" : "")} onClick={() => setFilter(null)}>
+            All <span className="count">{visibleCount}</span>
+          </div>
+          {STATUS_OPTIONS.map(s => (
+            <div key={s.value} className={"status-pill" + (statusFilter === s.value ? " selected" : "")}
+              onClick={() => setFilter(s.value)}
+              style={s.value === "archived" ? { marginLeft: "auto", opacity: counts[s.value] ? 1 : 0.4 } : {}}>
+              <span className="dot" style={{ background: s.color }} />
+              {s.label}
+              <span className="count">{counts[s.value]}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="toolbar">
+          <input className="search-box" placeholder="Search by location, product, vendor, directive..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          <button className="btn btn-sm" onClick={toggleSelectAll} style={{fontSize:11}}>{"\u2610"} Select All</button>
+        </div>
+
+        {/* Table */}
+        <div className="table-wrap"><div className="table-scroll">
+          <table><thead><tr>
+            <th className="cb-cell no-sort">{"\u2610"}</th>
+            <th onClick={() => handleSortBy("location")}>Location</th>
+            <th onClick={() => handleSortBy("displayType")}>Display Type</th>
+            <th onClick={() => handleSortBy("product")}>Product</th>
+            <th onClick={() => handleSortBy("vendor")}>Vendor</th>
+            <th onClick={() => handleSortBy("directive")}>Directive</th>
+            <th onClick={() => handleSortBy("status")}>Status</th>
+            <th onClick={() => handleSortBy("setupDate")}>Timeline</th>
+            <th>Mods</th>
+            <th style={{width:130}}></th>
+          </tr></thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={10}>
+                <div className="empty-state">
+                  <p>No displays found{searchQuery || statusFilter ? " matching filters" : ""}.</p>
+                  {!searchQuery && !statusFilter && <button className="btn btn-primary" onClick={() => setFormModal("add")}>+ Add First Display</button>}
+                </div>
+              </td></tr>
+            ) : filtered.map(r => {
+              const st = getStatus(r.status);
+              const loc = getLocDisp(r);
+              const lg = getLocGroup(r.location);
+              const sel = selectedIds.has(r.id);
+              const ms = r.modifications || [];
+              const rc = r.status === "expiring" ? "row-expiring" : r.status === "expired" ? "row-expired" : "";
+
+              let timeline;
+              if (r.permanent) {
+                timeline = <React.Fragment><div className="perm-indicator"><span className="perm-dot" /> Permanent</div><div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>Since {fmtDateShort(r.setupDate)}</div></React.Fragment>;
+              } else if (r.setupDate && r.expectedLife) {
+                const d = daysRem(r.setupDate, r.expectedLife);
+                const p = lifePct(r);
+                timeline = <div className="life-bar-wrap"><div className="life-bar-bg"><div className="life-bar-fill" style={{width: p + "%", background: lifeCol(p)}} /></div><div className="life-label">{r.expectedLife}d {"\u00b7"} {d > 0 ? d + "d left" : "Past due"}</div></div>;
+              } else {
+                timeline = <span style={{color:"var(--text3)",fontSize:12}}>{"\u2014"}</span>;
+              }
+
+              let modsCell;
+              if (ms.length) {
+                const lt = ms[ms.length - 1];
+                modsCell = <React.Fragment><span className="mod-badge">{lt.type}</span>{ms.length > 1 && <span className="mod-count"> +{ms.length - 1}</span>}</React.Fragment>;
+              } else {
+                modsCell = <span style={{color:"var(--text3)",fontSize:12}}>{"\u2014"}</span>;
+              }
+
+              return (
+                <tr key={r.id} className={rc + (sel ? " row-selected" : "")} style={{cursor:"pointer"}} onClick={() => setDetailId(r.id)}>
+                  <td className="cb-cell" onClick={e => toggleSelect(r.id, e)}>
+                    <input type="checkbox" checked={sel} onChange={() => {}} onClick={e => toggleSelect(r.id, e)} />
+                  </td>
+                  <td><div className="loc-code">{loc}</div><div className="loc-sub">{lg}</div></td>
+                  <td style={{fontSize:13}}>{r.displayType}</td>
+                  <td><div className="product-name">{r.product}</div></td>
+                  <td style={{fontSize:13}}>{r.vendor}</td>
+                  <td><span className={"directive-tag " + dirClass(r.directive)}>{r.directive}</span></td>
+                  <td><span className="badge" style={{background: st.color}}>{st.label}</span></td>
+                  <td>{timeline}</td>
+                  <td>{modsCell}</td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <div className="actions-cell">
+                      {r.planogramData && <button className="btn btn-sm btn-print" onClick={() => setPlanogramEntryId(r.id)} title="View Planogram">{"\ud83d\udcd0"}</button>}
+                      <button className="btn btn-sm" onClick={() => { setDetailId(null); setFormModal(r); }} title="Edit">{"\u270e"}</button>
+                      <button className="btn btn-sm btn-transition" onClick={() => { setDetailId(null); setTransitionSourceId(r.id); }} title="Transition">{"\u26a1"}</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDeleteRecord(r.id)} title="Delete">{"\u2715"}</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      {/* Print sheet (declarative React, hidden until window.print) */}
+      <PrintSheet
+        selectedRecords={records.filter(r => selectedIds.has(r.id))}
+        includePlanoInPrint={includePlanoInPrint}
+      />
+
+      {/* Modals */}
+      {formModal && (
+        <DisplayFormModal
+          record={formModal === "add" ? null : formModal}
+          isEdit={formModal !== "add"}
+          mapB64={mapB64}
+          onSave={handleSaveRecord}
+          onClose={() => setFormModal(null)}
+          onBuildPlanogram={handleBuildPlanogram}
+        />
+      )}
+      {transitionRecord && (
+        <TransitionWizard record={transitionRecord} onExecute={handleTransition} onClose={() => setTransitionSourceId(null)} />
+      )}
+      {detailRecord && (
+        <DetailPanel record={detailRecord} onEdit={(id) => { setDetailId(null); const r = records.find(x => x.id === id); if (r) setFormModal(r); }} onTransition={(id) => { setDetailId(null); setTransitionSourceId(id); }} onDelete={handleDeleteRecord} onViewPlanogram={(id) => { setDetailId(null); setPlanogramEntryId(id); }} onClose={() => setDetailId(null)} />
+      )}
+      {showMap && (
+        <MapModal mapB64={mapB64} onUpload={(data) => setMapB64(data)} onClose={() => setShowMap(false)} />
+      )}
+      {planogramRecord && (
+        <PlanogramModal initialData={planogramRecord.planogramData} onSave={handlePlanogramSave} onCancel={() => setPlanogramEntryId(null)} />
+      )}
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} onSaved={handleSettingsSaved} />
+      )}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  </script>
+</body>
+</html>
