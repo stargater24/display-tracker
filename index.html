@@ -390,9 +390,21 @@ const GitHubSync = {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const file = await res.json();
       this._mapSha = file.sha;
-      const content = atob(file.content.replace(/\n/g, ""));
-      localStorage.setItem("store-map-b64", content);
-      return content;
+      let content;
+      if (file.content) {
+        // Small files: content is inline base64
+        content = atob(file.content.replace(/\n/g, ""));
+      } else if (file.download_url) {
+        // Large files (>1MB): GitHub doesn't inline content, use download_url
+        const rawRes = await fetch(file.download_url);
+        if (!rawRes.ok) throw new Error(`Download failed: HTTP ${rawRes.status}`);
+        content = await rawRes.text();
+      }
+      if (content) {
+        localStorage.setItem("store-map-b64", content);
+        return content;
+      }
+      return localStorage.getItem("store-map-b64") || "";
     } catch (err) {
       console.warn("GitHub map load failed:", err);
       return localStorage.getItem("store-map-b64") || "";
