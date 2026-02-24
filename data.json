@@ -55,26 +55,26 @@
       "id": 14
     },
     {
-      "id": 15,
       "location": "__other__",
       "otherLocation": "Any Empty Area",
       "displayType": "Small Tall Metro",
       "product": "Vita-Coco & Wheat Thins",
       "vendor": "UNFI/MCDC",
       "directive": "Store Discretion",
-      "status": "active",
-      "setupDate": "2026-02-24",
+      "status": "scheduled",
+      "setupDate": "2026-02-26",
       "expectedLife": 14,
       "permanent": false,
       "notes": "",
-      "planogramData": null,
       "modifications": [
         {
           "type": "Transitioned from 3BR",
           "date": "2026-02-24T20:15:17.217Z",
           "detail": ""
         }
-      ]
+      ],
+      "planogramData": null,
+      "id": 15
     },
     {
       "location": "3BR",
