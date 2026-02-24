@@ -1,6 +1,23 @@
 {
-  "records": [],
-  "nextId": 10,
+  "records": [
+    {
+      "location": "1BR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "gibberish",
+      "vendor": "unfi",
+      "directive": "Store Discretion",
+      "status": "scheduled",
+      "setupDate": "0026-02-24",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "",
+      "modifications": [],
+      "planogramData": null,
+      "id": 10
+    }
+  ],
+  "nextId": 11,
   "templates": [],
   "dimCache": {},
   "planograms": {}
