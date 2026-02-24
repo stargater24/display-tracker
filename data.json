@@ -15,9 +15,25 @@
       "modifications": [],
       "planogramData": null,
       "id": 12
+    },
+    {
+      "location": "1BR",
+      "otherLocation": "",
+      "displayType": "Small Tall Metro",
+      "product": "Stacy's Pita Chips & Crisps",
+      "vendor": "MCDC Plus Out",
+      "directive": "Clearance",
+      "status": "active",
+      "setupDate": "2026-02-24",
+      "expectedLife": 30,
+      "permanent": false,
+      "notes": "Pull Organic from Metro, fill with remaining product from back, pull on 3/20 and give to john",
+      "modifications": [],
+      "planogramData": null,
+      "id": 13
     }
   ],
-  "nextId": 13,
+  "nextId": 14,
   "templates": [],
   "dimCache": {},
   "planograms": {}
