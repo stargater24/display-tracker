@@ -1,22 +1,5 @@
 {
-  "records": [
-    {
-      "id": 4,
-      "location": "2AR",
-      "otherLocation": "",
-      "displayType": "Endcap",
-      "product": "5-Hour Energy Berry",
-      "vendor": "Living Essentials",
-      "directive": "Store Discretion",
-      "status": "scheduled",
-      "setupDate": "2026-02-22",
-      "expectedLife": 14,
-      "permanent": false,
-      "notes": "Waiting on shipper",
-      "modifications": [],
-      "planogramData": null
-    }
-  ],
+  "records": [],
   "nextId": 10,
   "templates": [],
   "dimCache": {},
