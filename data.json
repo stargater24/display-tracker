@@ -1,13 +1,84 @@
 {
   "records": [
-    {"id":1,"location":"1BR","otherLocation":"","displayType":"Endcap","product":"Coca-Cola Zero Sugar 12pk","vendor":"Coca-Cola","directive":"Corporate Mandatory","status":"active","setupDate":"2026-02-15","expectedLife":14,"permanent":false,"notes":"Super Bowl carryover promo","modifications":[],"planogramData":null},
-    {"id":2,"location":"3BF","otherLocation":"","displayType":"Small Tall Metro","product":"Frito-Lay Variety Pack 28ct","vendor":"Frito-Lay","directive":"Vendor Funded","status":"active","setupDate":"2026-02-08","expectedLife":14,"permanent":false,"notes":"","modifications":[{"type":"Downsized to Metro","date":"2026-02-12T10:30:00","detail":""}],"planogramData":null},
-    {"id":3,"location":"Metro Front Cold Beverage","otherLocation":"","displayType":"Mobile Refrigeration Unit","product":"Bai Antioxidant Infusion Asst","vendor":"Dr Pepper/Keurig","directive":"Regional Directive","status":"active","setupDate":"2026-02-01","expectedLife":0,"permanent":true,"notes":"Vendor rep checks Wed","modifications":[{"type":"Additional Product Incorporated","date":"2026-02-10T14:00:00","detail":"Bai Coconut Flavors 6pk"}],"planogramData":null},
-    {"id":4,"location":"2AR","otherLocation":"","displayType":"Endcap","product":"5-Hour Energy Berry","vendor":"Living Essentials","directive":"Store Discretion","status":"scheduled","setupDate":"2026-02-22","expectedLife":14,"permanent":false,"notes":"Waiting on shipper","modifications":[],"planogramData":null}
+    {
+      "id": 1,
+      "location": "1BR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "Coca-Cola Zero Sugar 12pk",
+      "vendor": "Coca-Cola",
+      "directive": "Corporate Mandatory",
+      "status": "active",
+      "setupDate": "2026-02-15",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "Super Bowl carryover promo",
+      "modifications": [],
+      "planogramData": null
+    },
+    {
+      "id": 2,
+      "location": "3BF",
+      "otherLocation": "",
+      "displayType": "Small Tall Metro",
+      "product": "Frito-Lay Variety Pack 28ct",
+      "vendor": "Frito-Lay",
+      "directive": "Vendor Funded",
+      "status": "active",
+      "setupDate": "2026-02-08",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "",
+      "modifications": [
+        {
+          "type": "Downsized to Metro",
+          "date": "2026-02-12T10:30:00",
+          "detail": ""
+        }
+      ],
+      "planogramData": null
+    },
+    {
+      "id": 3,
+      "location": "Metro Front Cold Beverage",
+      "otherLocation": "",
+      "displayType": "Mobile Refrigeration Unit",
+      "product": "Bai Antioxidant Infusion Asst",
+      "vendor": "Dr Pepper/Keurig",
+      "directive": "Regional Directive",
+      "status": "active",
+      "setupDate": "2026-02-01",
+      "expectedLife": 0,
+      "permanent": true,
+      "notes": "Vendor rep checks Wed",
+      "modifications": [
+        {
+          "type": "Additional Product Incorporated",
+          "date": "2026-02-10T14:00:00",
+          "detail": "Bai Coconut Flavors 6pk"
+        }
+      ],
+      "planogramData": null
+    },
+    {
+      "id": 4,
+      "location": "2AR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "5-Hour Energy Berry",
+      "vendor": "Living Essentials",
+      "directive": "Store Discretion",
+      "status": "scheduled",
+      "setupDate": "2026-02-22",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "Waiting on shipper",
+      "modifications": [],
+      "planogramData": null
+    }
   ],
   "nextId": 10,
   "templates": [],
   "dimCache": {},
-  "planograms": {},
-  "storeMapB64": ""
+  "planograms": {}
 }
