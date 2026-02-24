@@ -77,26 +77,26 @@
       ]
     },
     {
-      "id": 16,
       "location": "3BR",
       "otherLocation": "",
       "displayType": "Endcap",
       "product": "Cheeze-It",
       "vendor": "MCDC",
       "directive": "Store Discretion",
-      "status": "active",
+      "status": "scheduled",
       "setupDate": "2026-02-26",
       "expectedLife": 90,
       "permanent": false,
       "notes": "",
-      "planogramData": null,
       "modifications": [
         {
           "type": "Replaced Vita-Coco & Wheat Thins",
           "date": "2026-02-24T20:15:17.217Z",
           "detail": ""
         }
-      ]
+      ],
+      "planogramData": null,
+      "id": 16
     }
   ],
   "nextId": 17,
