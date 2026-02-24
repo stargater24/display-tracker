@@ -372,6 +372,54 @@ const GitHubSync = {
     localStorage.setItem(GH_SYNC_CACHE_KEY, JSON.stringify(data));
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ records: data.records, nextId: data.nextId }));
     this._saveTimer = setTimeout(() => this.save(data), delayMs);
+  },
+
+  // ── Store map sync (separate file to avoid bloating data.json) ──
+  _mapSha: null,
+
+  _mapUrl() {
+    const c = this.getConfig();
+    return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/store-map.b64`;
+  },
+
+  async loadMap() {
+    if (!this.isConfigured()) return localStorage.getItem("store-map-b64") || "";
+    try {
+      const res = await fetch(this._mapUrl(), { headers: this._headers() });
+      if (res.status === 404) return localStorage.getItem("store-map-b64") || "";
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const file = await res.json();
+      this._mapSha = file.sha;
+      const content = atob(file.content.replace(/\n/g, ""));
+      localStorage.setItem("store-map-b64", content);
+      return content;
+    } catch (err) {
+      console.warn("GitHub map load failed:", err);
+      return localStorage.getItem("store-map-b64") || "";
+    }
+  },
+
+  async saveMap(dataUrl) {
+    localStorage.setItem("store-map-b64", dataUrl);
+    if (!this.isConfigured()) return;
+    try {
+      const body = {
+        message: "Update store map",
+        content: btoa(dataUrl),
+      };
+      if (this._mapSha) body.sha = this._mapSha;
+      const res = await fetch(this._mapUrl(), {
+        method: "PUT",
+        headers: { ...this._headers(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        const result = await res.json();
+        this._mapSha = result.content.sha;
+      }
+    } catch (err) {
+      console.warn("GitHub map save failed:", err);
+    }
   }
 };
 
@@ -1695,6 +1743,7 @@ function MapModal({ mapB64, onUpload, onClose }) {
       const data = ev.target.result;
       try {
         localStorage.setItem("store-map-b64", data);
+        GitHubSync.saveMap(data);
         onUpload(data);
       } catch (err) {
         alert("Image is too large to save. Please upload a smaller image (under ~3MB).");
@@ -1952,6 +2001,10 @@ function App() {
         if (data.planograms) Object.entries(data.planograms).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
       }
     });
+    // Load store map separately (stored as its own file to avoid bloating data.json)
+    GitHubSync.loadMap().then((mapData) => {
+      if (mapData) setMapB64(mapData);
+    });
   }, []);
 
   const handleRefreshFromGitHub = useCallback(async () => {
@@ -1963,6 +2016,9 @@ function App() {
       if (data.dimCache) localStorage.setItem("plano-dim-cache", JSON.stringify(data.dimCache));
       if (data.planograms) Object.entries(data.planograms).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
     }
+    // Also refresh the store map
+    const mapData = await GitHubSync.loadMap();
+    if (mapData) setMapB64(mapData);
   }, []);
 
   const handleSettingsSaved = useCallback(() => {
