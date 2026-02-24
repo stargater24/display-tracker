@@ -2002,8 +2002,17 @@ function App() {
       }
     });
     // Load store map separately (stored as its own file to avoid bloating data.json)
+    // If a map exists locally but not on GitHub yet, push it (one-time migration)
     GitHubSync.loadMap().then((mapData) => {
-      if (mapData) setMapB64(mapData);
+      if (mapData) {
+        setMapB64(mapData);
+      } else {
+        const localMap = localStorage.getItem("store-map-b64");
+        if (localMap) {
+          setMapB64(localMap);
+          GitHubSync.saveMap(localMap);
+        }
+      }
     });
   }, []);
 
