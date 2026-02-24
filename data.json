@@ -1,39 +1,105 @@
 {
   "records": [
     {
-      "location": "1BR",
-      "otherLocation": "",
-      "displayType": "Endcap",
-      "product": "blah blah",
-      "vendor": "unfi",
-      "directive": "Store Discretion",
-      "status": "scheduled",
-      "setupDate": "2026-02-24",
-      "expectedLife": 14,
-      "permanent": false,
-      "notes": "",
-      "modifications": [],
-      "planogramData": null,
-      "id": 10
-    },
-    {
-      "location": "1BR",
-      "otherLocation": "",
-      "displayType": "Endcap",
-      "product": "Steve's Favorite",
-      "vendor": "MCDC",
+      "location": "__other__",
+      "otherLocation": "Grocery Deli Island",
+      "displayType": "Medium Short Metro",
+      "product": "Close Dated Angies Boom Chicka",
+      "vendor": "MCDC Plus Out",
       "directive": "Clearance",
       "status": "active",
       "setupDate": "2026-02-24",
-      "expectedLife": 0,
-      "permanent": true,
-      "notes": "",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "Pull White Cheddar on 3/4, real butter and BCP Cheddar on 3/10, give to John when pulling down.",
       "modifications": [],
       "planogramData": null,
-      "id": 11
+      "id": 12
+    },
+    {
+      "location": "2BF",
+      "otherLocation": "",
+      "displayType": "Small Tall Metro",
+      "product": "Stacy's Pita Chips & Crisps",
+      "vendor": "MCDC Plus Out",
+      "directive": "Clearance",
+      "status": "active",
+      "setupDate": "2026-02-24",
+      "expectedLife": 30,
+      "permanent": false,
+      "notes": "Pull Organic from Metro, fill with remaining product from back, pull on 3/20 and give to john",
+      "modifications": [],
+      "planogramData": null,
+      "id": 13
+    },
+    {
+      "location": "3BR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "Vita-Coco & Wheat Thins",
+      "vendor": "UNFI/MCDC",
+      "directive": "Store Discretion",
+      "status": "archived",
+      "setupDate": "2026-02-01",
+      "expectedLife": 26,
+      "permanent": false,
+      "notes": "",
+      "modifications": [
+        {
+          "type": "Moved",
+          "date": "2026-02-24T20:15:17.217Z",
+          "detail": "Transitioned to Any Empty Area"
+        }
+      ],
+      "planogramData": null,
+      "id": 14
+    },
+    {
+      "location": "__other__",
+      "otherLocation": "Any Empty Area",
+      "displayType": "Small Tall Metro",
+      "product": "Vita-Coco & Wheat Thins",
+      "vendor": "UNFI/MCDC",
+      "directive": "Store Discretion",
+      "status": "scheduled",
+      "setupDate": "2026-02-26",
+      "expectedLife": 14,
+      "permanent": false,
+      "notes": "",
+      "modifications": [
+        {
+          "type": "Transitioned from 3BR",
+          "date": "2026-02-24T20:15:17.217Z",
+          "detail": ""
+        }
+      ],
+      "planogramData": null,
+      "id": 15
+    },
+    {
+      "location": "3BR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "Cheeze-It",
+      "vendor": "MCDC",
+      "directive": "Store Discretion",
+      "status": "scheduled",
+      "setupDate": "2026-02-26",
+      "expectedLife": 90,
+      "permanent": false,
+      "notes": "",
+      "modifications": [
+        {
+          "type": "Replaced Vita-Coco & Wheat Thins",
+          "date": "2026-02-24T20:15:17.217Z",
+          "detail": ""
+        }
+      ],
+      "planogramData": null,
+      "id": 16
     }
   ],
-  "nextId": 12,
+  "nextId": 17,
   "templates": [],
   "dimCache": {},
   "planograms": {}
