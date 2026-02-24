@@ -31,9 +31,25 @@
       "modifications": [],
       "planogramData": null,
       "id": 13
+    },
+    {
+      "location": "3BR",
+      "otherLocation": "",
+      "displayType": "Endcap",
+      "product": "Vita-Coco & Wheat Thins",
+      "vendor": "UNFI/MCDC",
+      "directive": "Store Discretion",
+      "status": "active",
+      "setupDate": "2026-02-01",
+      "expectedLife": 26,
+      "permanent": false,
+      "notes": "",
+      "modifications": [],
+      "planogramData": null,
+      "id": 14
     }
   ],
-  "nextId": 14,
+  "nextId": 15,
   "templates": [],
   "dimCache": {},
   "planograms": {}
